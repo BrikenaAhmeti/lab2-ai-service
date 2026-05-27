@@ -47,7 +47,7 @@ src/
 Create `.env` from `.env.example`.
 
 ```env
-PORT=3005
+PORT=3010
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/medsphere_ai
 AI_PROVIDER_MODE=stub
@@ -72,7 +72,7 @@ Base path: `/api/ai`
 | GET | `/consultations/:appointmentId` | Reads stored transcription and summary |
 | POST | `/consultations/:appointmentId/approve` | Marks AI summary as approved |
 | POST | `/lab-results/:labOrderId/interpret` | Creates clinical and patient lab interpretations |
-| GET | `/lab-results/:labOrderId/interpretation` | Reads stored lab interpretation |
+| GET | `/lab-results/:labOrderId/interpretation` | Reads the MS-55 patient lab interpretation response |
 | POST | `/agent/message` | Sends/continues reservation-agent message |
 
 ## MongoDB Collections
@@ -93,5 +93,17 @@ npm run test
 Health check:
 
 ```bash
-curl http://localhost:3005/health
+curl http://localhost:3010/health
+```
+
+MS-55 lab interpretation response:
+
+```json
+{
+  "labOrderId": "lab-123",
+  "patientVersion": "Plain-language explanation for the patient.",
+  "disclaimer": "AI-generated explanation - discuss results with your doctor.",
+  "recommendations": ["Review the result with a licensed clinician."],
+  "riskFlags": ["Glucose - moderate (180 mg/dL): Reference range: 70-99 mg/dL"]
+}
 ```

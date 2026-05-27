@@ -98,6 +98,18 @@ aiRoutes.get('/capabilities', (_req, res) => {
                 ],
             },
             {
+                id: 'MS-55',
+                name: 'Patient lab interpretation handoff',
+                endpoints: ['GET /api/ai/lab-results/:labOrderId/interpretation'],
+                responseShape: {
+                    labOrderId: 'string',
+                    patientVersion: 'string',
+                    disclaimer: 'string?',
+                    recommendations: 'string[]?',
+                    riskFlags: 'string[]?',
+                },
+            },
+            {
                 id: 'MS-35',
                 name: 'Reservation agent',
                 endpoints: ['POST /api/ai/agent/message'],
@@ -176,7 +188,7 @@ aiRoutes.post(
 aiRoutes.get(
     '/lab-results/:labOrderId/interpretation',
     asyncHandler(async (req, res) => {
-        const interpretation = await labInterpretationService.getByLabOrderId(
+        const interpretation = await labInterpretationService.getPatientVersionByLabOrderId(
             requiredParam(req.params.labOrderId, 'labOrderId'),
         );
 

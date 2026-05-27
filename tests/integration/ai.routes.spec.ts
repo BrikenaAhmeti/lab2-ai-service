@@ -22,6 +22,7 @@ describe('AI service routes', () => {
         expect(response.body.features.map((feature: { id: string }) => feature.id)).toEqual([
             'MS-33',
             'MS-34',
+            'MS-55',
             'MS-35',
         ]);
     });

@@ -64,6 +64,14 @@ export interface LabInterpretationResult {
     tokenUsage?: TokenUsage;
 }
 
+export interface LabInterpretationPatientVersionResponse {
+    labOrderId: string;
+    patientVersion: string;
+    disclaimer?: string;
+    recommendations?: string[];
+    riskFlags?: string[];
+}
+
 export type ReservationOutcome = 'in_progress' | 'booked' | 'abandoned' | 'referred';
 
 export interface ReservationMessage {

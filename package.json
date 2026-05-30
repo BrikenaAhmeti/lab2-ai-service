@@ -5,10 +5,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --exec tsx src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "docker:up": "node scripts/docker-compose.mjs up --build -d",
+    "docker:down": "node scripts/docker-compose.mjs down",
+    "docker:logs": "node scripts/docker-compose.mjs logs -f ai-service",
+    "docker:ps": "node scripts/docker-compose.mjs ps"
   },
   "keywords": [],
   "author": "",

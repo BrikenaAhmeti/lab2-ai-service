@@ -97,6 +97,25 @@ npm run build
 npm run test
 ```
 
+Docker:
+
+```bash
+npm run docker:up
+npm run docker:logs
+npm run docker:ps
+npm run docker:down
+```
+
+`npm run docker:up` starts the AI service, MongoDB, and Redis through Docker
+Compose. The service runs in local development mode with `stub` AI by default,
+so it does not require an OpenAI key unless you set `AI_PROVIDER_MODE=openai`.
+
+Inside Docker, the service uses `mongodb://mongodb:27017/medsphere_ai`. This is
+intentional because `localhost` inside the app container points to the app
+container itself, not the MongoDB container. If Core Service is running natively
+on your machine, Compose uses `CORE_SERVICE_URL_DOCKER` and defaults it to
+`http://host.docker.internal:4000`.
+
 Health check:
 
 ```bash

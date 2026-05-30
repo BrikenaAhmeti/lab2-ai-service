@@ -6,11 +6,24 @@ import { errorHandler } from './shared/middleware/error-handler';
 import { notFoundHandler } from './shared/middleware/not-found';
 import { aiRoutes } from './modules/ai/presentation/ai.routes';
 import { getMongoHealth } from './infrastructure/mongodb/mongoose';
+import { registerSwaggerDocs } from './docs/swagger';
 
 export function createApp() {
     const app = express();
 
-    app.use(helmet());
+    app.use(
+        helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    scriptSrc: ["'self'", "'unsafe-inline'"],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    imgSrc: ["'self'", 'data:'],
+                    fontSrc: ["'self'", 'data:'],
+                },
+            },
+        }),
+    );
     app.use(cors());
     app.use(morgan('dev'));
     app.use(express.json());
@@ -22,6 +35,8 @@ export function createApp() {
             mongo: getMongoHealth(),
         });
     });
+
+    registerSwaggerDocs(app);
 
     app.use('/api/ai', aiRoutes);
 

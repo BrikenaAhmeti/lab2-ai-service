@@ -13,6 +13,7 @@ The AI Service stores AI-generated data in MongoDB. It does not own PostgreSQL t
 - Node.js, Express, TypeScript
 - MongoDB with Mongoose
 - OpenAI provider boundary, with safe local `stub` mode by default
+- Swagger/OpenAPI docs at `/api/docs`
 - Jest and Supertest
 
 ## Project Structure
@@ -60,6 +61,12 @@ MAX_AUDIO_FILE_SIZE_MB=25
 
 Use `AI_PROVIDER_MODE=stub` for local setup without API keys. Switch to `openai` only when `OPENAI_API_KEY` is configured.
 
+OpenAI is only required when you want real AI output. The service runs without an
+OpenAI key in `stub` mode, which returns deterministic placeholder
+transcriptions, summaries, lab interpretations, and reservation-agent replies.
+Use `AI_PROVIDER_MODE=openai` plus `OPENAI_API_KEY` for Whisper transcription and
+GPT-powered summarization, lab interpretation, and reservation-agent responses.
+
 ## Endpoints
 
 Base path: `/api/ai`
@@ -95,6 +102,12 @@ Health check:
 ```bash
 curl http://localhost:3010/health
 ```
+
+Swagger/OpenAPI:
+
+- Swagger UI: `http://localhost:3010/api/docs`
+- OpenAPI JSON: `http://localhost:3010/api/docs.json`
+- Postman collection: `docs/postman/medsphere-ai-service.postman_collection.json`
 
 MS-55 lab interpretation response:
 

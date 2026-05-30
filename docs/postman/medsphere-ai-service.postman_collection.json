@@ -1,0 +1,253 @@
+{
+  "info": {
+    "_postman_id": "c3b1304d-0efb-4cf8-8a5d-6c0d7f4c51f1",
+    "name": "MedSphere AI Service",
+    "description": "Postman collection for the MedSphere AI microservice. Use the baseUrl variable for local or gateway URLs and bearerToken when calling protected routes through the gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3010"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    },
+    {
+      "key": "appointmentId",
+      "value": "apt-123"
+    },
+    {
+      "key": "labOrderId",
+      "value": "lab-123"
+    },
+    {
+      "key": "sessionId",
+      "value": "session-123"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Get service health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get OpenAPI JSON",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docs.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "docs.json"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Capabilities",
+      "item": [
+        {
+          "name": "List AI capabilities",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/capabilities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "capabilities"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultation AI",
+      "item": [
+        {
+          "name": "Transcribe consultation audio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "appointmentId",
+                  "value": "{{appointmentId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "patientId",
+                  "value": "patient-123",
+                  "type": "text"
+                },
+                {
+                  "key": "staffId",
+                  "value": "staff-123",
+                  "type": "text"
+                },
+                {
+                  "key": "audioFileUrl",
+                  "value": "https://files.medsphere.local/audio/apt-123.webm",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/transcribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "transcribe"]
+            }
+          }
+        },
+        {
+          "name": "Summarize consultation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"patientId\": \"patient-123\",\n  \"staffId\": \"staff-123\",\n  \"transcription\": \"Patient reports persistent cough and fever for three days.\",\n  \"context\": {\n    \"department\": \"General Medicine\",\n    \"visitType\": \"follow-up\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/summarize",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "summarize"]
+            }
+          }
+        },
+        {
+          "name": "Get consultation AI data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/consultations/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "consultations", "{{appointmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve consultation summary",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/consultations/{{appointmentId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "consultations", "{{appointmentId}}", "approve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lab AI",
+      "item": [
+        {
+          "name": "Interpret lab results",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"patient-123\",\n  \"results\": [\n    {\n      \"name\": \"Glucose\",\n      \"value\": 180,\n      \"unit\": \"mg/dL\",\n      \"referenceRange\": \"70-99 mg/dL\",\n      \"flag\": \"high\"\n    }\n  ],\n  \"patientContext\": {\n    \"age\": 46,\n    \"gender\": \"female\",\n    \"knownConditions\": [\"Type 2 diabetes\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/lab-results/{{labOrderId}}/interpret",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "lab-results", "{{labOrderId}}", "interpret"]
+            }
+          }
+        },
+        {
+          "name": "Get patient lab interpretation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/lab-results/{{labOrderId}}/interpretation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "lab-results", "{{labOrderId}}", "interpretation"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservation Agent",
+      "item": [
+        {
+          "name": "Send reservation-agent message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"I need to book an appointment with cardiology next week.\",\n  \"userId\": \"user-123\",\n  \"patientId\": \"patient-123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/agent/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "agent", "message"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

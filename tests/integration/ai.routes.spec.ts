@@ -27,6 +27,21 @@ describe('AI service routes', () => {
         ]);
     });
 
+    it('serves OpenAPI documentation for the AI service', async () => {
+        const uiResponse = await request(app).get('/api/docs/');
+        const specResponse = await request(app).get('/api/docs.json');
+
+        expect(uiResponse.status).toBe(200);
+        expect(uiResponse.text).toContain('swagger-ui');
+        expect(specResponse.status).toBe(200);
+        expect(specResponse.body.openapi).toBe('3.0.3');
+        expect(specResponse.body.paths).toHaveProperty('/api/ai/transcribe');
+        expect(specResponse.body.paths).toHaveProperty('/api/ai/summarize');
+        expect(specResponse.body.components.securitySchemes).toHaveProperty(
+            'bearerAuth',
+        );
+    });
+
     it('validates summarize requests before invoking persistence', async () => {
         const response = await request(app).post('/api/ai/summarize').send({});
 

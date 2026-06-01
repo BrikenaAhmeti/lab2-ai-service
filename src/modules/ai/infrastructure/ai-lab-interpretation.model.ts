@@ -32,7 +32,8 @@ const aiLabInterpretationSchema = new Schema(
         disclaimer: {
             type: String,
             required: true,
-            default: 'AI-generated explanation — discuss results with your doctor.',
+            default:
+                'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
         },
         riskFlags: [riskFlagSchema],
         recommendations: [{ type: String }],

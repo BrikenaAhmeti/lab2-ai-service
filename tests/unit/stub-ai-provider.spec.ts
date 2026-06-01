@@ -17,7 +17,13 @@ describe('StubAiProvider', () => {
             ],
         });
 
-        expect(result.disclaimer).toContain('discuss results with your doctor');
+        expect(result.disclaimer).toContain('not a diagnosis');
+        expect(result.patientInterpretation).toContain(
+            'Glucose is above the provided reference range',
+        );
+        expect(result.recommendations).toContain(
+            'Your clinic may direct glucose, thyroid, or hormone-related values to Endocrinology for review.',
+        );
         expect(result.riskFlags).toHaveLength(1);
     });
 

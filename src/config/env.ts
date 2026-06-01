@@ -17,6 +17,7 @@ const envSchema = z.object({
     OPENAI_TEXT_MODEL: z.string().min(1).default('gpt-4o'),
     OPENAI_TRANSCRIPTION_MODEL: z.string().min(1).default('whisper-1'),
     CORE_SERVICE_URL: z.string().url().default('http://localhost:4000'),
+    INTERNAL_API_KEY: z.string().optional().default(''),
     MAX_AUDIO_FILE_SIZE_MB: z.coerce.number().positive().default(25),
 });
 
@@ -41,5 +42,6 @@ export const env = {
     openAiTextModel: values.OPENAI_TEXT_MODEL,
     openAiTranscriptionModel: values.OPENAI_TRANSCRIPTION_MODEL,
     coreServiceUrl: values.CORE_SERVICE_URL,
+    internalApiKey: values.INTERNAL_API_KEY,
     maxAudioFileSizeMb: values.MAX_AUDIO_FILE_SIZE_MB,
 };

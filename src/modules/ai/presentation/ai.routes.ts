@@ -5,6 +5,7 @@ import { createAiProvider } from '../../../infrastructure/ai/ai-provider';
 import { env } from '../../../config/env';
 import { AppError } from '../../../shared/core/errors/app-error';
 import { asyncHandler } from '../../../shared/http/async-handler';
+import { requireInternalApiKey } from '../../../shared/middleware/internal-api-key';
 import { ConsultationAiService } from '../services/consultation-ai.service';
 import { LabInterpretationAiService } from '../services/lab-interpretation-ai.service';
 import { ReservationAgentService } from '../services/reservation-agent.service';
@@ -94,6 +95,7 @@ aiRoutes.get('/capabilities', (_req, res) => {
                 name: 'Lab result interpretation',
                 endpoints: [
                     'POST /api/ai/lab-results/:labOrderId/interpret',
+                    'POST /api/ai/internal/lab-results/:labOrderId/interpret',
                     'GET /api/ai/lab-results/:labOrderId/interpretation',
                 ],
             },
@@ -182,6 +184,35 @@ aiRoutes.post(
         });
 
         res.status(201).json(interpretation);
+    }),
+);
+
+aiRoutes.post(
+    '/internal/lab-results/:labOrderId/interpret',
+    requireInternalApiKey,
+    asyncHandler(async (req, res) => {
+        const body = labInterpretationSchema.parse(req.body);
+        const labOrderId = requiredParam(req.params.labOrderId, 'labOrderId');
+
+        setImmediate(() => {
+            void labInterpretationService
+                .interpret({
+                    ...body,
+                    labOrderId,
+                })
+                .catch((error: unknown) => {
+                    console.error(
+                        'Background lab interpretation failed',
+                        labOrderId,
+                        error,
+                    );
+                });
+        });
+
+        res.status(202).json({
+            labOrderId,
+            status: 'queued',
+        });
     }),
 );
 

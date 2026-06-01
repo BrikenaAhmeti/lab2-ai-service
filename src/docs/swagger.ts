@@ -319,6 +319,49 @@ const openApiDefinition = {
                 },
             },
         },
+        '/api/ai/internal/lab-results/{labOrderId}/interpret': {
+            post: {
+                tags: ['Lab AI'],
+                summary: 'Queue lab result interpretation from Core Service',
+                operationId: 'queueLabResultsInterpretation',
+                security: [{ internalApiKey: [] }],
+                parameters: [
+                    {
+                        $ref: '#/components/parameters/LabOrderId',
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/LabInterpretationRequest',
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '202': {
+                        description:
+                            'Interpretation job accepted and will be generated in the background.',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    $ref: '#/components/schemas/QueuedLabInterpretationResponse',
+                                },
+                                example: {
+                                    labOrderId: 'lab-123',
+                                    status: 'queued',
+                                },
+                            },
+                        },
+                    },
+                    '400': { $ref: '#/components/responses/BadRequest' },
+                    '401': { $ref: '#/components/responses/Unauthorized' },
+                    '503': { $ref: '#/components/responses/AiProviderUnavailable' },
+                },
+            },
+        },
         '/api/ai/lab-results/{labOrderId}/interpretation': {
             get: {
                 tags: ['Lab AI'],
@@ -342,14 +385,14 @@ const openApiDefinition = {
                                 example: {
                                     labOrderId: 'lab-123',
                                     patientVersion:
-                                        'Some values may need attention. Please discuss the full result with your doctor.',
+                                        'Some lab values were marked outside the provided reference range: Glucose is above the provided reference range (180 mg/dL; reference range: 70-99 mg/dL). This does not diagnose a condition. Please review the full result with your doctor or ordering clinician.',
                                     disclaimer:
-                                        'AI-generated explanation - discuss results with your doctor.',
+                                        'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
                                     recommendations: [
-                                        'Review the interpretation with a licensed clinician.',
+                                        'Review the full lab report with the ordering clinician.',
                                     ],
                                     riskFlags: [
-                                        'Glucose - moderate (180 mg/dL): Reference range: 70-99 mg/dL',
+                                        'Glucose - moderate (180 mg/dL): Above the provided reference range: 70-99 mg/dL',
                                     ],
                                 },
                             },
@@ -414,6 +457,13 @@ const openApiDefinition = {
                 bearerFormat: 'JWT',
                 description:
                     'JWT access token passed by the frontend or API gateway.',
+            },
+            internalApiKey: {
+                type: 'apiKey',
+                in: 'header',
+                name: 'x-internal-api-key',
+                description:
+                    'Shared service-to-service key for Core Service background handoffs.',
             },
         },
         parameters: {
@@ -916,7 +966,7 @@ const openApiDefinition = {
                     },
                     note: {
                         type: 'string',
-                        example: 'Reference range: 70-99 mg/dL',
+                        example: 'Above the provided reference range: 70-99 mg/dL',
                     },
                 },
             },
@@ -952,12 +1002,12 @@ const openApiDefinition = {
                     patientInterpretation: {
                         type: 'string',
                         example:
-                            'Some values may need attention. Please discuss the full result with your doctor.',
+                            'Some lab values were marked outside the provided reference range: Glucose is above the provided reference range (180 mg/dL; reference range: 70-99 mg/dL). This does not diagnose a condition. Please review the full result with your doctor or ordering clinician.',
                     },
                     disclaimer: {
                         type: 'string',
                         example:
-                            'AI-generated explanation - discuss results with your doctor.',
+                            'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
                     },
                     riskFlags: {
                         type: 'array',
@@ -971,7 +1021,7 @@ const openApiDefinition = {
                             type: 'string',
                         },
                         example: [
-                            'Review the interpretation with a licensed clinician.',
+                            'Review the full lab report with the ordering clinician.',
                         ],
                     },
                     model: {
@@ -1002,12 +1052,12 @@ const openApiDefinition = {
                     patientVersion: {
                         type: 'string',
                         example:
-                            'Some values may need attention. Please discuss the full result with your doctor.',
+                            'Some lab values were marked outside the provided reference range: Glucose is above the provided reference range (180 mg/dL; reference range: 70-99 mg/dL). This does not diagnose a condition. Please review the full result with your doctor or ordering clinician.',
                     },
                     disclaimer: {
                         type: 'string',
                         example:
-                            'AI-generated explanation - discuss results with your doctor.',
+                            'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
                     },
                     recommendations: {
                         type: 'array',
@@ -1020,6 +1070,21 @@ const openApiDefinition = {
                         items: {
                             type: 'string',
                         },
+                    },
+                },
+            },
+            QueuedLabInterpretationResponse: {
+                type: 'object',
+                required: ['labOrderId', 'status'],
+                properties: {
+                    labOrderId: {
+                        type: 'string',
+                        example: 'lab-123',
+                    },
+                    status: {
+                        type: 'string',
+                        enum: ['queued'],
+                        example: 'queued',
                     },
                 },
             },

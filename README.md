@@ -56,6 +56,7 @@ OPENAI_API_KEY=
 OPENAI_TEXT_MODEL=gpt-4o
 OPENAI_TRANSCRIPTION_MODEL=whisper-1
 CORE_SERVICE_URL=http://localhost:4000
+INTERNAL_API_KEY=
 MAX_AUDIO_FILE_SIZE_MB=25
 ```
 
@@ -66,6 +67,10 @@ OpenAI key in `stub` mode, which returns deterministic placeholder
 transcriptions, summaries, lab interpretations, and reservation-agent replies.
 Use `AI_PROVIDER_MODE=openai` plus `OPENAI_API_KEY` for Whisper transcription and
 GPT-powered summarization, lab interpretation, and reservation-agent responses.
+Lab interpretation patient text stays range-based and calm: it says which
+submitted values are above, below, or outside the provided reference range and
+directs the patient back to the ordering clinician or a relevant department for
+review. It should not diagnose diseases or provide treatment instructions.
 
 ## Endpoints
 
@@ -79,8 +84,14 @@ Base path: `/api/ai`
 | GET | `/consultations/:appointmentId` | Reads stored transcription and summary |
 | POST | `/consultations/:appointmentId/approve` | Marks AI summary as approved |
 | POST | `/lab-results/:labOrderId/interpret` | Creates clinical and patient lab interpretations |
+| POST | `/internal/lab-results/:labOrderId/interpret` | Queues lab interpretation generation for Core Service handoff |
 | GET | `/lab-results/:labOrderId/interpretation` | Reads the MS-55 patient lab interpretation response |
 | POST | `/agent/message` | Sends/continues reservation-agent message |
+
+Core Service can call the internal lab interpretation endpoint after lab
+results are entered. In production, set the same `INTERNAL_API_KEY` in Core and
+AI Service and send it as `x-internal-api-key`. In local development the
+internal route is open if no key is configured, which keeps setup simple.
 
 ## MongoDB Collections
 
@@ -133,9 +144,9 @@ MS-55 lab interpretation response:
 ```json
 {
   "labOrderId": "lab-123",
-  "patientVersion": "Plain-language explanation for the patient.",
-  "disclaimer": "AI-generated explanation - discuss results with your doctor.",
-  "recommendations": ["Review the result with a licensed clinician."],
-  "riskFlags": ["Glucose - moderate (180 mg/dL): Reference range: 70-99 mg/dL"]
+  "patientVersion": "Some lab values were marked outside the provided reference range: Glucose is above the provided reference range (180 mg/dL; reference range: 70-99 mg/dL). This does not diagnose a condition. Please review the full result with your doctor or ordering clinician.",
+  "disclaimer": "AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.",
+  "recommendations": ["Review the full lab report with the ordering clinician."],
+  "riskFlags": ["Glucose - moderate (180 mg/dL): Above the provided reference range: 70-99 mg/dL"]
 }
 ```

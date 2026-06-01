@@ -14,6 +14,12 @@ import {
     TranscriptionResult,
     UploadedAudio,
 } from '../../modules/ai/domain/ai.types';
+import {
+    buildClinicalRangeSummary,
+    buildPatientSafeLabInterpretation,
+    isUnsafeLabInterpretationText,
+    LAB_INTERPRETATION_SYSTEM_PROMPT,
+} from '../../modules/ai/domain/lab-interpretation-guidance';
 
 export interface SummarizeConsultationInput {
     transcription: string;
@@ -70,30 +76,14 @@ export class StubAiProvider implements AiProvider {
     async interpretLabResults(
         input: InterpretLabResultsInput,
     ): Promise<LabInterpretationResult> {
-        const flagged = input.results.filter(
-            (result) => result.flag && result.flag !== 'normal',
-        );
+        const safeInterpretation = buildPatientSafeLabInterpretation(input.results);
 
         return {
-            clinicalInterpretation:
-                flagged.length > 0
-                    ? 'One or more results are outside the reference range and should be reviewed by the ordering clinician.'
-                    : 'No abnormal flags were included in the submitted lab result payload.',
-            patientInterpretation:
-                flagged.length > 0
-                    ? 'Some values may need attention. Please discuss the full result with your doctor.'
-                    : 'The submitted values do not include abnormal flags.',
-            disclaimer:
-                'AI-generated explanation — discuss results with your doctor.',
-            riskFlags: flagged.map((result) => ({
-                testName: result.name,
-                severity: result.flag === 'critical' ? 'critical' : 'moderate',
-                value: String(result.value),
-                note: result.referenceRange
-                    ? `Reference range: ${result.referenceRange}`
-                    : 'Outside the submitted normal range.',
-            })),
-            recommendations: ['Review the interpretation with a licensed clinician.'],
+            clinicalInterpretation: buildClinicalRangeSummary(input.results),
+            patientInterpretation: safeInterpretation.patientInterpretation,
+            disclaimer: safeInterpretation.disclaimer,
+            riskFlags: safeInterpretation.riskFlags,
+            recommendations: safeInterpretation.recommendations,
             model: 'stub-lab-interpretation',
         };
     }
@@ -184,8 +174,7 @@ export class OpenAiProvider implements AiProvider {
             messages: [
                 {
                     role: 'system',
-                    content:
-                        'Return only JSON with keys clinicalInterpretation, patientInterpretation, disclaimer, riskFlags, recommendations. The patient interpretation must be plain language and must not replace doctor judgment.',
+                    content: LAB_INTERPRETATION_SYSTEM_PROMPT,
                 },
                 {
                     role: 'user',
@@ -198,9 +187,20 @@ export class OpenAiProvider implements AiProvider {
         const interpretation = parseJson<
             Omit<LabInterpretationResult, 'model' | 'tokenUsage'>
         >(content, 'OpenAI lab interpretation response was not valid JSON');
+        const safeInterpretation = buildPatientSafeLabInterpretation(input.results);
+        const clinicalInterpretation =
+            typeof interpretation.clinicalInterpretation === 'string' &&
+            interpretation.clinicalInterpretation.trim() &&
+            !isUnsafeLabInterpretationText(interpretation.clinicalInterpretation)
+                ? interpretation.clinicalInterpretation.trim()
+                : buildClinicalRangeSummary(input.results);
 
         return {
-            ...interpretation,
+            clinicalInterpretation,
+            patientInterpretation: safeInterpretation.patientInterpretation,
+            disclaimer: safeInterpretation.disclaimer,
+            riskFlags: safeInterpretation.riskFlags,
+            recommendations: safeInterpretation.recommendations,
             model: env.openAiTextModel,
             tokenUsage: tokenUsageFrom(completion.usage),
         };

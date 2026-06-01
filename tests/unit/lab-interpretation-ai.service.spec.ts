@@ -5,14 +5,15 @@ describe('toPatientLabInterpretationResponse', () => {
         const response = toPatientLabInterpretationResponse({
             labOrderId: 'lab-1',
             patientInterpretation: 'Your glucose result is higher than expected.',
-            disclaimer: 'AI-generated explanation - discuss results with your doctor.',
+            disclaimer:
+                'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
             recommendations: ['Review the result with a licensed clinician.'],
             riskFlags: [
                 {
                     testName: 'Glucose',
                     severity: 'moderate',
                     value: '180 mg/dL',
-                    note: 'Reference range: 70-99 mg/dL',
+                    note: 'Above the provided reference range: 70-99 mg/dL',
                 },
             ],
         });
@@ -20,9 +21,12 @@ describe('toPatientLabInterpretationResponse', () => {
         expect(response).toEqual({
             labOrderId: 'lab-1',
             patientVersion: 'Your glucose result is higher than expected.',
-            disclaimer: 'AI-generated explanation - discuss results with your doctor.',
+            disclaimer:
+                'AI-generated range explanation only - not a diagnosis. Review the full result with your doctor or ordering clinician.',
             recommendations: ['Review the result with a licensed clinician.'],
-            riskFlags: ['Glucose - moderate (180 mg/dL): Reference range: 70-99 mg/dL'],
+            riskFlags: [
+                'Glucose - moderate (180 mg/dL): Above the provided reference range: 70-99 mg/dL',
+            ],
         });
     });
 });

@@ -27,8 +27,12 @@ const aiConversationSchema = new Schema(
         patientId: { type: String, index: true },
         staffId: { type: String, index: true },
         audioFileUrl: String,
+        audioOriginalName: String,
+        audioMimeType: String,
+        audioSizeBytes: Number,
         transcription: String,
         summary: consultationSummarySchema,
+        reportText: String,
         summaryStatus: {
             type: String,
             enum: ['draft', 'approved', 'discarded'],

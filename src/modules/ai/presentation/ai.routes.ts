@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { createAiProvider } from '../../../infrastructure/ai/ai-provider';
@@ -7,6 +7,7 @@ import { AppError } from '../../../shared/core/errors/app-error';
 import { asyncHandler } from '../../../shared/http/async-handler';
 import { requireInternalApiKey } from '../../../shared/middleware/internal-api-key';
 import { ConsultationAiService } from '../services/consultation-ai.service';
+import { storeConsultationAudio } from '../services/audio-storage.service';
 import { LabInterpretationAiService } from '../services/lab-interpretation-ai.service';
 import { ReservationAgentService } from '../services/reservation-agent.service';
 
@@ -44,6 +45,25 @@ const summarizeSchema = z.object({
     transcription: z.string().min(1),
     context: z.record(z.string(), z.unknown()).optional(),
 });
+
+const updateConsultationSummarySchema = z
+    .object({
+        reportText: z.string().trim().min(1).optional(),
+        summary: z
+            .object({
+                chiefComplaint: z.string(),
+                historyOfPresentIllness: z.string(),
+                examinationFindings: z.string(),
+                assessmentAndDiagnosis: z.string(),
+                treatmentPlan: z.string(),
+                followUpInstructions: z.string(),
+            })
+            .optional(),
+        summaryStatus: z.enum(['draft', 'approved', 'discarded']).optional(),
+    })
+    .refine((body) => body.reportText || body.summary || body.summaryStatus, {
+        message: 'At least one summary field is required',
+    });
 
 const labResultItemSchema = z.object({
     name: z.string().min(1),
@@ -87,6 +107,7 @@ aiRoutes.get('/capabilities', (_req, res) => {
                     'POST /api/ai/transcribe',
                     'POST /api/ai/summarize',
                     'GET /api/ai/consultations/:appointmentId',
+                    'PUT /api/ai/consultations/:appointmentId/summary',
                     'POST /api/ai/consultations/:appointmentId/approve',
                 ],
             },
@@ -129,8 +150,15 @@ aiRoutes.post(
         }
 
         const metadata = optionalMetadataSchema.parse(req.body);
+        const storedAudio = await storeConsultationAudio(req.file);
+        const audioFileUrl =
+            metadata.audioFileUrl ?? absoluteUrl(req, storedAudio.relativeUrl);
         const result = await consultationService.transcribe({
             ...metadata,
+            audioFileUrl,
+            audioOriginalName: storedAudio.originalName,
+            audioMimeType: storedAudio.mimeType,
+            audioSizeBytes: storedAudio.sizeBytes,
             file: {
                 buffer: req.file.buffer,
                 originalName: req.file.originalname,
@@ -138,7 +166,10 @@ aiRoutes.post(
             },
         });
 
-        res.json(result);
+        res.json({
+            ...result,
+            audioFileUrl,
+        });
     }),
 );
 
@@ -158,6 +189,19 @@ aiRoutes.get(
         const conversation = await consultationService.getByAppointmentId(
             requiredParam(req.params.appointmentId, 'appointmentId'),
         );
+
+        res.json(conversation);
+    }),
+);
+
+aiRoutes.put(
+    '/consultations/:appointmentId/summary',
+    asyncHandler(async (req, res) => {
+        const body = updateConsultationSummarySchema.parse(req.body);
+        const conversation = await consultationService.updateSummary({
+            ...body,
+            appointmentId: requiredParam(req.params.appointmentId, 'appointmentId'),
+        });
 
         res.json(conversation);
     }),
@@ -243,4 +287,14 @@ function requiredParam(value: string | string[] | undefined, name: string) {
     }
 
     return value;
+}
+
+function absoluteUrl(req: Request, path: string) {
+    if (env.publicBaseUrl) {
+        return new URL(path, env.publicBaseUrl).toString();
+    }
+
+    const host = req.get('host') ?? `localhost:${env.port}`;
+
+    return `${req.protocol}://${host}${path}`;
 }

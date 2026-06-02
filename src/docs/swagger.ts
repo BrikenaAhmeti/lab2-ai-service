@@ -229,6 +229,51 @@ const openApiDefinition = {
                 },
             },
         },
+        '/api/ai/consultations/{appointmentId}/summary': {
+            put: {
+                tags: ['Consultation AI'],
+                summary: 'Save an edited AI consultation report',
+                operationId: 'updateAiConsultationSummary',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        $ref: '#/components/parameters/AppointmentId',
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/UpdateConsultationSummaryRequest',
+                            },
+                            example: {
+                                reportText:
+                                    'Chief complaint\nChest discomfort\n\nAssessment and diagnosis\nStable exam',
+                                summaryStatus: 'draft',
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': {
+                        description:
+                            'AI consultation report text was saved for the appointment.',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    $ref: '#/components/schemas/AiConversation',
+                                },
+                            },
+                        },
+                    },
+                    '400': { $ref: '#/components/responses/BadRequest' },
+                    '401': { $ref: '#/components/responses/Unauthorized' },
+                    '403': { $ref: '#/components/responses/Forbidden' },
+                    '404': { $ref: '#/components/responses/NotFound' },
+                },
+            },
+        },
         '/api/ai/consultations/{appointmentId}/approve': {
             post: {
                 tags: ['Consultation AI'],
@@ -712,6 +757,12 @@ const openApiDefinition = {
                         type: 'string',
                         example: 'whisper-1',
                     },
+                    audioFileUrl: {
+                        type: 'string',
+                        format: 'uri',
+                        example:
+                            'http://localhost:3010/uploads/consultation-audio/apt-123.webm',
+                    },
                     tokenUsage: {
                         $ref: '#/components/schemas/TokenUsage',
                     },
@@ -790,6 +841,25 @@ const openApiDefinition = {
                     },
                 },
             },
+            UpdateConsultationSummaryRequest: {
+                type: 'object',
+                properties: {
+                    reportText: {
+                        type: 'string',
+                        minLength: 1,
+                        example:
+                            'Chief complaint\nChest discomfort\n\nTreatment plan\nContinue monitoring',
+                    },
+                    summary: {
+                        $ref: '#/components/schemas/ConsultationSummary',
+                    },
+                    summaryStatus: {
+                        type: 'string',
+                        enum: ['draft', 'approved', 'discarded'],
+                        example: 'draft',
+                    },
+                },
+            },
             AiConversation: {
                 type: 'object',
                 required: ['appointmentId', 'summaryStatus'],
@@ -816,6 +886,19 @@ const openApiDefinition = {
                         example:
                             'https://files.medsphere.local/audio/apt-123.webm',
                     },
+                    audioOriginalName: {
+                        type: 'string',
+                        example: 'consultation.webm',
+                    },
+                    audioMimeType: {
+                        type: 'string',
+                        example: 'audio/webm',
+                    },
+                    audioSizeBytes: {
+                        type: 'integer',
+                        minimum: 0,
+                        example: 481024,
+                    },
                     transcription: {
                         type: 'string',
                         example:
@@ -823,6 +906,11 @@ const openApiDefinition = {
                     },
                     summary: {
                         $ref: '#/components/schemas/ConsultationSummary',
+                    },
+                    reportText: {
+                        type: 'string',
+                        example:
+                            'Chief complaint\nPersistent cough and fever\n\nTreatment plan\nPending doctor review',
                     },
                     summaryStatus: {
                         type: 'string',
@@ -871,6 +959,11 @@ const openApiDefinition = {
                 properties: {
                     summary: {
                         $ref: '#/components/schemas/ConsultationSummary',
+                    },
+                    reportText: {
+                        type: 'string',
+                        example:
+                            'Chief complaint\nPersistent cough and fever\n\nTreatment plan\nPending doctor review',
                     },
                     conversation: {
                         $ref: '#/components/schemas/AiConversation',

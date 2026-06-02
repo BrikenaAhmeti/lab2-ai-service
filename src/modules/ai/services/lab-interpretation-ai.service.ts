@@ -42,7 +42,7 @@ export class LabInterpretationAiService {
                     tokenUsage: result.tokenUsage,
                 },
             },
-            { upsert: true, new: true, setDefaultsOnInsert: true },
+            { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
         ).lean();
 
         return interpretation;

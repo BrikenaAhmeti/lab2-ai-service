@@ -12,7 +12,8 @@
     "docker:up": "node scripts/docker-compose.mjs up --build -d",
     "docker:down": "node scripts/docker-compose.mjs down",
     "docker:logs": "node scripts/docker-compose.mjs logs -f ai-service",
-    "docker:ps": "node scripts/docker-compose.mjs ps"
+    "docker:ps": "node scripts/docker-compose.mjs ps",
+    "seed:lab": "tsx scripts/seed-lab-interpretations.ts"
   },
   "keywords": [],
   "author": "",

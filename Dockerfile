@@ -12,6 +12,7 @@ RUN npm ci
 
 COPY tsconfig.json tsconfig.build.json jest.config.ts ./
 COPY src ./src
+COPY docs ./docs
 COPY tests ./tests
 
 EXPOSE 3010
@@ -38,6 +39,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY docs ./docs
 
 EXPOSE 3010
 

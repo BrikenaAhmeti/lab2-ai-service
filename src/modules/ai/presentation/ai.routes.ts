@@ -137,6 +137,20 @@ aiRoutes.get('/capabilities', (_req, res) => {
                 name: 'Reservation agent',
                 endpoints: ['POST /api/ai/agent/message'],
             },
+            {
+                id: 'MS-56',
+                name: 'Dashboard helper socket chat',
+                sockets: {
+                    namespace: '/',
+                    clientEvents: ['dashboard-helper:message'],
+                    serverEvents: [
+                        'dashboard-helper:ready',
+                        'dashboard-helper:typing',
+                        'dashboard-helper:message',
+                        'dashboard-helper:error',
+                    ],
+                },
+            },
         ],
     });
 });

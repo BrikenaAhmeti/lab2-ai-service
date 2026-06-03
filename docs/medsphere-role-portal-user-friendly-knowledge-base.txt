@@ -1,0 +1,528 @@
+# MedSphere Role Portal User Friendly Knowledge Base
+
+Source document: MedSphere_Role_Portal_User_Friendly_Knowledge_Base.docx
+
+MedSphere UBT
+Role Portal Functionality Knowledge Base
+Plain-language version for dashboard users and the AI chat helper
+How the AI helper should use this knowledge base
+Always answer according to the logged-in user role and assigned permissions.
+Do not explain screens or actions that the user cannot access. Instead say: “Your role or permissions may not include that module.”
+Use simple dashboard words: Dashboard, Book Appointment, My Appointments, Lab Results, Pharmacy Queue, Billing, Messages, Reports, Profile, and Sessions.
+Do not mention internal database fields, IDs, API routes, vector stores, or backend service names to the user.
+Give practical steps. For example: “Open My Appointments, choose the appointment, then select Cancel.”
+When the answer is not in this document, say: “I could not find this in the MedSphere dashboard knowledge base.”
+Do not give medical advice. For symptoms, diagnosis, treatment, emergency issues, or medication advice, tell the user to contact qualified medical staff.
+For real-time updates, explain that notifications and dashboard updates can appear instantly when the real-time feature is enabled. The chat widget socket connection may be completed later if it is still pending.
+Common words the AI helper should use
+Shared rules for all logged-in users
+Common form validation in simple language
+Public Visitor / Website User
+Purpose: A website visitor can browse public information, book an appointment as a guest, contact the facility, sign in, or create a patient account.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Public users do not see internal portals such as Admin, Doctor, Nurse, Lab, Pharmacy, Receptionist, Reports, Billing Management, or Inventory Management.
+If a visitor asks for internal actions, the AI should say they must sign in with the correct role and permissions.
+Public booking may create or connect to a patient record depending on the system setup.
+Example answers the AI helper should give
+Patient Portal
+Purpose: Patients use the portal to manage their care: booking, appointments, records, lab results, prescriptions, billing, messages, profile, and sessions.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Patients can only see their own appointments, records, lab results, prescriptions, billing, feedback, messages, profile, and sessions.
+Patients cannot manage users, staff, departments, CMS, reports, inventory, pharmacy queue, or audit logs.
+If a patient cannot see a screen, explain that their role or permissions may not include that module.
+Example answers the AI helper should give
+Receptionist Portal
+Purpose: Receptionists manage front-desk work: booking, check-in, patient search or registration, appointment updates, billing support, messages, profile, and sessions.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Receptionists usually have access to appointment management, patient registration/search, billing support, messages, profile, and sessions.
+Receptionists do not create medical records, prescriptions, lab results, CMS pages, user permissions, or inventory stock unless extra permissions are assigned.
+If the receptionist cannot see an action, the AI should say the role or permissions may not include that module.
+Example answers the AI helper should give
+Doctor Portal
+Purpose: Doctors use the portal for clinical work: today’s appointments, consultations, patient history, medical records, prescriptions, lab orders, lab reviews, AI summaries, messages, profile, and sessions.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Doctors normally see their own appointments and assigned patients, unless extra department-wide access is granted.
+Doctors can create medical records, prescriptions, lab orders, and review lab results only when they have the right clinical permissions.
+Doctors cannot manage users, CMS, inventory, or billing unless extra permissions are assigned.
+AI explanations must not replace the doctor’s clinical judgement.
+Example answers the AI helper should give
+Nurse Portal
+Purpose: Nurses support department care coordination. They help prepare patients, monitor the queue, record readiness information when available, communicate with staff, and manage profile and sessions.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+The current nurse scope may include Dashboard, Messages, Profile, and Sessions, with vitals or triage workflows added if implemented.
+Nurses do not create prescriptions, finalize doctor records, enter lab results, dispense medication, or manage admin settings unless extra permissions are assigned.
+If a nurse asks for a missing form, the AI should explain it may be a future or permission-based feature.
+Example answers the AI helper should give
+Lab Technician Portal
+Purpose: Lab technicians process lab orders: review queues, update status, enter results, complete orders, and make results available for doctor review.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Lab technicians can process lab orders and enter lab results where permission allows.
+They do not create appointments, prescribe medication, dispense pharmacy items, manage users, or manage CMS unless extra permissions are assigned.
+AI lab interpretation may appear when AI support is configured, but the lab technician should not present it as medical advice.
+Example answers the AI helper should give
+Pharmacist Portal
+Purpose: Pharmacists manage the prescription queue, review patient allergy warnings, dispense medication, update fulfillment status, and communicate with doctors when clarification is needed.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Pharmacists usually access Pharmacy Queue, prescription details, dispensing actions, messages, profile, and sessions.
+They do not change the doctor’s prescription text, create medical records, enter lab results, or manage admin settings unless extra permissions are assigned.
+They can mark items out of stock or substituted according to pharmacy rules.
+Example answers the AI helper should give
+Admin and Super Admin Portal
+Purpose: Admins manage facility operations. Super Admin has the broadest access, including users, permissions, organization setup, CMS, settings, reports, and audit-related areas.
+Screens this role can usually see
+Main actions and how they work
+Simple validation and error rules
+Access and permission guidance
+Admin access depends on assigned permissions. Some admins may not see Users, Settings, CMS, Reports, or Audit Logs.
+Super Admin has the broadest access and can manage organization-level setup, users, permissions, and sensitive settings.
+If any screen or button is missing, the AI should explain that role or permissions may not include that module.
+Admins should not be shown clinical edit actions unless their assigned permissions allow them.
+Example answers the AI helper should give
+Feature-specific user guidance
+Appointments
+Billing
+Inventory
+Reports and search
+CMS and public website
+AI helper safe-answer examples
+Short role-based opening messages for the AI chat
+Final guardrail checklist for the AI helper
+Use the role first, then the current screen, then the question.
+Never expose technical field names or database keys to normal users.
+Use action words users understand: open, choose, select, enter, save, cancel, reschedule, review, download.
+Mention validations in normal language: required, valid email, future date, reason required, amount cannot exceed balance.
+Mention permission limits politely and consistently.
+When explaining a workflow, keep the answer short unless the user asks for more details.
+Never invent buttons, modules, medical advice, or backend behavior not included in the knowledge base.
+
+## Table 1
+
+Document purpose: This document is written for normal users, not developers. It avoids database field names, IDs, API paths, and technical keys. The AI helper should use this document to explain what each role can do in the dashboard, how to complete actions, what validation rules apply, and what to say when access is missing.
+
+## Table 2
+
+Instead of saying this technical phrase | Say this to the user
+userId, staffProfileId, serviceCatalogId | patient, staff member, service, or appointment details
+UUID | selected record or selected person
+payload | form details or submitted information
+endpoint / API route | screen or action
+HTTP 403 | you may not have permission to open this screen
+HTTP 409 | this record may already exist or conflicts with another record
+validation schema | required fields and form rules
+final status | this appointment cannot be changed anymore
+
+## Table 3
+
+Screen or feature | What users can do | Simple rules
+Dashboard | See the most important information for their role, such as appointments, queues, messages, notifications, tasks, billing, or reports. | The information depends on role and permission. If a card is missing, the user may not have access to that module.
+Messages | Open conversations, read messages, send a reply, see unread counts, and view message history. | The user can only message people allowed by their role. If sending fails, ask them to check the message and try again.
+Profile | Update personal information such as name, phone, birthday, gender, and avatar. | Required profile fields must be completed. Date of birth cannot be in the future.
+Change Password | Change the current password from the Profile area. | The current password is required. The new password must be strong and the confirmation must match.
+Sessions | See active sessions/devices and revoke sessions they do not recognize. | Users should revoke unknown sessions and log in again if needed.
+Notifications | Receive appointment, lab, pharmacy, billing, inventory, feedback, contact, or message alerts. | Notifications may update instantly when real-time connection is enabled.
+
+## Table 4
+
+Form item | Rule to explain to users
+Email | Must look like a real email address.
+Password | For registration or reset, it should be strong: long enough and include uppercase, lowercase, number, and special character.
+Password confirmation | Must match the new password.
+Date of birth | Cannot be in the future.
+Appointment date and time | Must be today or a future time. Past appointment slots cannot be selected.
+Required fields | Fields marked as required must be completed before the form can be saved.
+Cancellation | A cancellation reason is required.
+Payment amount | Must be more than zero and cannot be higher than the outstanding balance.
+Ratings | Feedback rating must be between 1 and 5.
+Stock quantity | Quantity must be a valid number and cannot break inventory rules.
+
+## Table 5
+
+Screen | What the screen is for
+Home | See main facility information, shortcuts, and public banners.
+About / CMS Page | Read public information controlled by the admin CMS.
+Departments | View active departments only.
+Doctors | View active public doctors or specialists only.
+Services | View active public services only.
+Book Appointment | Use a step-by-step booking wizard.
+Contact | Send a contact request to the facility.
+Login / Register | Sign in or create a patient account.
+
+## Table 6
+
+Action | How the user does it | What happens after
+Browse departments and doctors | Open Departments or Doctors from the public menu and filter if available. | The visitor sees only active public information.
+Book appointment as guest | Open Book Appointment, enter personal details, choose department, service, staff member, slot, and confirm. | A booking summary is shown with status, calendar download, create account option, and sign-in option.
+Send contact message | Open Contact, fill name, email, subject, and message, then submit. | The message goes to the admin contact inbox.
+Create account | Open Register, enter required personal details and password, then verify email if required. | The account becomes usable after successful registration and verification.
+
+## Table 7
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Booking personal details | First name, last name, email, phone, personal number, birthday, and gender must be completed. | Please complete all required personal details before continuing.
+Booking slot | The selected appointment time must be today or in the future. A selected slot is reserved only for a short time. | This slot is no longer available. Please choose another time.
+Contact form | Name, valid email, subject, and message are required. | Please complete the required contact fields.
+Registration | Email must be valid and password must be strong. Password confirmation must match. | Please check your email and password details before submitting.
+
+## Table 8
+
+User question | Good AI answer
+How do I book an appointment? | Open Book Appointment. Enter your details, choose a department, select a service and staff member, pick an available slot, then confirm.
+Why can’t I see billing? | Billing is available only after signing in with a role that has billing access, usually Patient, Receptionist, Admin, or Super Admin.
+
+## Table 9
+
+Screen | What the screen is for
+Dashboard | Shows upcoming appointments, recent notifications, billing shortcuts, records, lab results, prescriptions, and feedback reminders.
+Book Appointment | Lets the patient book a new appointment step by step.
+My Appointments | Shows upcoming and past appointments, with details, cancel, and reschedule options when allowed.
+Medical Records | Shows finalized medical records and downloadable summaries where available.
+Lab Results | Shows completed or reviewed lab results, flags, critical warnings, and AI explanation when available.
+Prescriptions | Shows active or voided prescriptions, medication details, pharmacy status, and PDF/download.
+Billing | Shows bills, payments, outstanding amounts, and PDF statements.
+Feedback | Allows feedback after completed appointments when feedback was not already submitted.
+Messages | Lets the patient communicate with allowed doctors or staff.
+Profile / Sessions | Lets the patient update personal details and manage signed-in devices.
+
+## Table 10
+
+Action | How the user does it | What happens after
+Book an appointment | Open Book Appointment, choose department, service, staff member or slot, review details, and confirm. | The appointment appears in My Appointments. Notifications may be sent.
+Cancel appointment | Open My Appointments, choose an appointment, select Cancel, and enter a reason. | The appointment changes to Cancelled if cancellation is allowed.
+Reschedule appointment | Open My Appointments, choose an appointment, select Reschedule, then choose a future available slot. | The appointment keeps its history but gets a new time.
+View lab results | Open Lab Results and select a completed or reviewed result. | The patient sees raw values, flags, and patient-friendly AI interpretation if available.
+View prescriptions | Open Prescriptions and select a prescription. | The patient sees medication instructions and pharmacy status.
+Pay or review billing | Open Billing and select a billing record. | The patient can view payments, outstanding amount, and download a statement.
+Submit feedback | Open Feedback after a completed appointment and give a 1 to 5 rating. | The feedback is saved and can be reviewed by authorized staff.
+
+## Table 11
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Book appointment | The selected time must be today or future. Required booking details must be filled. | Please choose a valid future appointment slot and complete all required details.
+Cancel appointment | A reason is required and final appointments may not be editable. | Please enter a cancellation reason, or this appointment may no longer be changeable.
+Reschedule appointment | The new slot must be available and in the future. | Please select a future available time.
+Feedback | Rating must be between 1 and 5 and only allowed for completed appointments without previous feedback. | Feedback is available only after a completed appointment and only once.
+Profile update | Required personal details must be valid, and birthday cannot be in the future. | Please check your profile details before saving.
+
+## Table 12
+
+User question | Good AI answer
+How do I see my lab results? | Open Lab Results from the Patient Portal. Select a completed or reviewed result to see the values, flags, and AI explanation if it is available.
+Can I edit my medical record? | No. Medical records are created and finalized by clinical staff. You can view finalized records from Medical Records.
+How do I cancel my appointment? | Open My Appointments, choose the appointment, select Cancel, and enter a reason. Some final appointments cannot be changed.
+
+## Table 13
+
+Screen | What the screen is for
+Dashboard | Shows today’s schedule, appointment counts, filters by department or staff, and front-desk actions.
+Appointments | Lets receptionists view, book, cancel, reschedule, check in, or mark no-show when allowed.
+Book on Behalf | Uses the appointment wizard for an existing or newly registered patient.
+Walk-In | Registers a walk-in patient and starts booking with walk-in type.
+Patients | Search, register, and view patient profiles as allowed.
+Billing | View billing records and record payments when allowed.
+Messages | Communicate with staff or patients where allowed.
+Profile / Sessions | Manage own profile and signed-in devices.
+
+## Table 14
+
+Action | How the user does it | What happens after
+Check in patient | Open Dashboard or Appointments, find today’s appointment, and select Check In. | The status changes to Checked-In and clinical staff can see the patient is ready.
+Mark no-show | Find an appointment after the allowed grace period and select No-Show. | The status changes to No-Show if rules allow it.
+Book for patient | Open Book on Behalf, select or register patient, choose department, service, staff, slot, and confirm. | The appointment is created for that patient.
+Register walk-in | Open Walk-In, enter patient details, then continue to booking. | A walk-in appointment can be created.
+Cancel or reschedule | Open the appointment, choose Cancel or Reschedule, and enter the required reason or new slot. | The patient and staff can be notified.
+Record payment | Open Billing, choose a bill, select Record Payment, enter amount and method. | The bill payment status updates.
+
+## Table 15
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Check-in | Usually allowed only for Scheduled or Confirmed appointments. | This appointment cannot be checked in from its current status.
+No-show | Allowed only after the appointment start time plus the configured grace period. | No-show can be marked only after the allowed time.
+Cancel | A cancellation reason is required. | Please enter a cancellation reason.
+Reschedule | The new appointment time must be in the future and available. | Please choose a valid future slot.
+Register patient | Required patient details must be valid. Duplicate email or personal number may be blocked. | This patient may already exist. Please search before creating a new profile.
+Record payment | Payment amount must be more than zero and not greater than the outstanding balance. | Please enter a valid payment amount.
+
+## Table 16
+
+User question | Good AI answer
+How do appointments start? | Appointments start when a patient self-books or a receptionist books for them. When the patient arrives, use Dashboard or Appointments to check them in.
+When can I mark no-show? | Use No-Show only after the appointment time and the configured grace period have passed.
+How do I book for a walk-in? | Open Walk-In, register or confirm the patient details, then continue through the booking steps and choose a current or future slot.
+
+## Table 17
+
+Screen | What the screen is for
+Dashboard | Shows today’s appointments, checked-in or ready patients, unread messages, pending lab reviews, and clinical actions.
+Consultation | Opens a specific appointment to review patient context, create records, prescribe, order labs, and use AI summary tools.
+Medical Record Form | Lets the doctor save a draft and finalize the consultation record.
+Prescription Form | Lets the doctor add medication items connected to the medical record.
+Lab Order Area | Lets the doctor request lab tests if the module is available.
+Doctor Lab Reviews | Shows completed lab orders awaiting review, critical warnings, AI interpretation, notes, and mark reviewed action.
+Patient History | Shows previous records, prescriptions, appointments, and lab results.
+Messages | Communicate with patients or staff where allowed.
+Profile / Sessions | Manage own profile and signed-in devices.
+
+## Table 18
+
+Action | How the user does it | What happens after
+Start consultation | Open Dashboard, choose a checked-in or ready appointment, then open Consultation. | The consultation screen opens with patient summary and clinical forms.
+Save medical record draft | Fill clinical notes and choose Save Draft. | The record stays editable.
+Finalize medical record | Review the record and select Finalize. | The record becomes locked; later corrections must be added as amendments if supported.
+Create prescription | Open Consultation, use Prescription Form, add one or more medication items, then save. | The patient can see the prescription and pharmacy may receive it.
+Order lab tests | Open Consultation, select tests, priority, and notes, then submit. | The lab receives the order.
+Review lab result | Open Doctor Lab Reviews, view result values and warnings, add notes, then mark reviewed. | The patient can be notified that results are ready.
+Use AI summary | Record or upload consultation audio, review AI summary, edit if needed, then approve. | Approved text can help fill the medical record.
+
+## Table 19
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Start consultation | The appointment should be checked-in or ready according to workflow. | Please start from a checked-in or ready appointment on the Doctor Dashboard.
+Complete appointment | Usually allowed only when the appointment is In Progress. | This appointment must be in progress before it can be completed.
+Medical record | Important clinical fields should be completed before finalizing. | Please review the medical record before finalizing. Finalized records become locked.
+Prescription | A medical record should exist first. Each medication needs name, dosage, frequency, and quantity. | Please complete the required prescription details.
+Lab review | Completed lab orders can be reviewed. Critical values should be checked carefully. | Please review the results and notes before marking as reviewed.
+AI summary | The doctor must review and approve AI-generated content before it becomes part of the record. | AI output should be checked by the doctor before approval.
+
+## Table 20
+
+User question | Good AI answer
+What should I do first today? | Open the Doctor Dashboard and check today’s checked-in or ready consultations. Start with the next ready patient.
+Why can’t I edit a record? | The record may already be finalized. Finalized medical records are locked to protect clinical history.
+How do I use the AI report? | Open the Consultation page, record or upload audio, wait for the AI summary, review it, edit if needed, and approve it only when correct.
+
+## Table 21
+
+Screen | What the screen is for
+Dashboard | Shows assigned department care overview, today’s patients or tasks, and quick links.
+Patient Queue / Tasks | Shows patients who may need preparation, triage, readiness check, or handoff.
+Vitals / Triage (if enabled) | Lets nurses enter patient vitals, triage notes, or readiness notes.
+Patient Quick View | Shows basic patient information needed for preparation, such as allergies or current medications if allowed.
+Messages | Communicate with doctors or staff.
+Profile / Sessions | Manage own profile and signed-in devices.
+
+## Table 22
+
+Action | How the user does it | What happens after
+Review today’s queue | Open Dashboard to see patients or tasks assigned to the nurse’s department. | The nurse can prepare patients in the right order.
+Enter vitals if available | Open the patient task or vitals form, enter measurements, timestamp, and notes. | The doctor can see preparation notes during consultation.
+Mark patient ready if available | After preparation, select the ready or handoff action. | The doctor dashboard can show that the patient is ready.
+Read patient context | Open Patient Quick View when allowed. | The nurse sees only permitted information.
+
+## Table 23
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Vitals | Numbers must be realistic and a time should be attached when required. | Please check the vitals values and timestamp.
+Triage notes | Notes should be clear and related to preparation or handoff. | Please enter a clear note before saving.
+Read-only clinical data | Nurses may be able to read records but not edit them. | This information is read-only for your role.
+Department scope | Nurses usually see only their assigned department. | Your role or permissions may not include patients from this department.
+
+## Table 24
+
+User question | Good AI answer
+Where do I start? | Open the Nurse Dashboard. Review today’s department queue and prepare the next patient or task.
+Can I edit medical records? | Your role usually allows preparation and read-only clinical context, not editing finalized medical records.
+Why can’t I see all patients? | Nurse access is usually limited to the assigned department unless cross-department permission is granted.
+
+## Table 25
+
+Screen | What the screen is for
+Lab Dashboard | Shows pending, collected, in-progress, and completed lab orders plus daily stats.
+Lab Order Detail | Shows patient, doctor, department, priority, ordered time, tests, reference ranges, and result entry.
+Result Entry | Lets technicians enter result values, units, and notes.
+Completed Orders | Shows completed lab work and search/filter options.
+Export Lab Results | Allows export if the user has access.
+Messages | Communicate with doctors or staff for clarification.
+Profile / Sessions | Manage own profile and signed-in devices.
+
+## Table 26
+
+Action | How the user does it | What happens after
+Start processing order | Open Lab Dashboard, choose a pending or collected order, and update the status. | The order moves to the next lab stage.
+Enter results | Open the order detail, enter results for each requested test, and save. | The system can preview normal, abnormal, or critical flags.
+Complete order | Enter all required results, then mark the order as completed. | The ordering doctor can review the results.
+Review critical flag | Check any red or critical warning before completing. | Critical results are highlighted for attention.
+Export results | Use Export on the lab list if available. | A file is downloaded in the supported format.
+
+## Table 27
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Status update | Orders should move in the correct order: pending, collected, in progress, completed. | This order cannot move to that status yet.
+Complete order | Every requested test should have a result before completion. | Please enter results for all required tests before completing the order.
+Result value | A submitted result must include a value. Unit and notes may be optional depending on setup. | Please enter the result value before saving.
+Critical result | Critical values should be checked carefully before completion. | Please review the critical warning before completing.
+
+## Table 28
+
+User question | Good AI answer
+How do I complete a lab order? | Open Lab Dashboard, select the order, enter results for every test, review any flags, then mark the order as completed.
+Why can’t I complete this order? | All required test results must be entered before completion, or the order may not be in the correct status.
+Who sees the results after completion? | The ordering doctor can review the completed results. Patients usually see results after doctor review.
+
+## Table 29
+
+Screen | What the screen is for
+Pharmacy Queue | Shows pending, on-hold, in-progress, partially dispensed, dispensed, fulfilled, and cancelled prescriptions.
+Prescription Detail | Shows patient, allergies, doctor, issued date, expiry date, prescription notes, queue notes, and medication items.
+Dispensing Form | Lets the pharmacist select inventory item, enter dispensed quantity, and mark item status.
+Fulfillment History | Shows fulfilled prescriptions with search and date filters.
+Messages | Communicate with doctors or staff for clarification.
+Profile / Sessions | Manage own profile and signed-in devices.
+
+## Table 30
+
+Action | How the user does it | What happens after
+Start prescription | Open Pharmacy Queue, select a pending prescription, and choose Start. | The prescription moves into progress.
+Dispense medication | Open the detail page, review allergies, enter item dispensing information, and save. | Medication items update as dispensed, out of stock, or substituted.
+Mark out of stock | For an unavailable item, choose Out of Stock and save with quantity zero. | The patient and doctor can be notified.
+Fulfill prescription | After all items are handled, select Fulfill. | The prescription queue item is completed if ready.
+Ask doctor for clarification | Use Messages if prescription details are unclear. | The conversation stays in the message thread.
+
+## Table 31
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Dispense item | A real inventory item and positive quantity are required unless the item is marked out of stock. | Please choose the inventory item and enter a valid quantity.
+Out of stock | Quantity should be zero and no inventory item is required. | This item is marked out of stock. The patient and doctor may be notified.
+Quantity | Quantity cannot be more than the remaining amount to dispense. | Please enter a quantity that does not exceed the prescription amount.
+Fulfill | All items must be handled before fulfillment. | This prescription cannot be fulfilled until all items are handled.
+Permission | The user needs pharmacy dispensing permission. | Your role or permissions may not allow dispensing.
+
+## Table 32
+
+User question | Good AI answer
+Where do I see prescriptions? | Open Pharmacy Queue. Use the tabs to find pending, in-progress, or fulfilled prescriptions.
+How do I mark medicine out of stock? | Open the prescription detail, choose the item, select Out of Stock, leave quantity as zero, and save.
+Why can’t I fulfill this prescription? | All medication items must be dispensed, substituted, or marked out of stock before fulfillment.
+
+## Table 33
+
+Screen | What the screen is for
+Dashboard | Shows facility stats, checked-in patients, pending lab orders, low stock inventory, revenue, charts, shortcuts, and recent activity.
+Departments | Manage departments, active/inactive status, location, phone, and operating hours.
+Services | Manage service catalog by department, duration, price, active status, and ordering.
+Staff Position Types | Manage staff role types used when creating staff members.
+Users | Create and manage users and role assignments where allowed.
+Staff Management | Manage staff directory, department assignments, schedules, exceptions, and deactivation.
+Patients | Search, import/export, register, and view patient profile tabs.
+Inventory | Manage categories, items, stock transactions, alerts, and history.
+Billing | View revenue, bills, payments, PDF statements, and record payments.
+Reports | Generate appointment, clinical, financial, inventory, patient, and staff workload reports.
+Advanced Search | Search across patients, appointments, lab orders, inventory, staff, and audit logs if allowed.
+CMS Pages and Banners | Manage public website pages, sections, banners, and visibility.
+Settings | Manage grouped settings such as working hours, defaults, and preferences.
+Feedback / Contact Inbox | Review patient feedback and public contact messages.
+Messages / Profile / Sessions | Communicate and manage own account.
+
+## Table 34
+
+Action | How the user does it | What happens after
+Monitor facility | Open Dashboard and review stats, charts, low stock, revenue, lab orders, and activity. | The dashboard updates as data changes when real-time is enabled.
+Manage departments | Open Departments, search/filter, then create, edit, deactivate, or reactivate. | Changes affect booking, staff assignment, reports, and public display if configured.
+Manage services | Open Services, choose department, add or edit service duration and price. | Services become available for booking and billing when active.
+Manage staff schedules | Open Staff Management, choose staff member, then use schedule and exceptions tabs. | Availability affects appointment slot generation.
+Manage patients | Open Patients, search or register patient, then view profile tabs. | Patient history connects appointments, records, billing, labs, and documents.
+Manage inventory | Open Inventory, add items/categories, record stock movement, and review alerts. | Stock levels and low-stock alerts update.
+Generate report | Open Reports, choose type, filters, grouping, preview, and export if needed. | Report can be downloaded and sometimes saved as a template.
+Manage CMS | Open CMS, edit pages, sections, or banners, then publish when ready. | Public website content changes according to CMS settings.
+Review contact inbox | Open Contact Inbox, read messages, update status, and add reply notes if supported. | Contact request status is updated.
+
+## Table 35
+
+When the user does this | What must be correct | Friendly answer if something is wrong
+Departments | Name is required. Sort order cannot be negative. Operating hours must be understandable if provided. | Please enter a department name and check the operating hours.
+Services | Department, service name, duration, and price must be valid. | Please select a department and enter valid duration and price.
+Staff schedule | Working days need start and end time. Start time must be before end time. Breaks must fit inside working hours. | Please check the schedule times before saving.
+Patient registration | Required patient details should be filled. Duplicate email or personal number may be blocked. | This patient may already exist. Please search before creating a new one.
+Inventory item | Category, SKU, name, unit, and valid stock values are needed. | Please complete the item information and check stock numbers.
+Inventory transaction | Quantity and reason are required. Transfer needs target department. | Please enter a valid quantity and reason.
+Billing payment | Amount must be more than zero and not above outstanding amount. | Please enter a valid payment amount.
+CMS content | Title, slug, message, links, and dates must be valid depending on the content type. | Please check the CMS title, link, dates, and required text.
+Report template | Template name should be clear and not too short or too long. | Please enter a valid template name.
+
+## Table 36
+
+User question | Good AI answer
+Why can’t I see CMS? | Your role or permissions may not include CMS editing. Super Admin or an admin with CMS permission can access it.
+How do I add a new service? | Open Services, choose Add Service, select the department, enter the service name, duration, price, active status, and save.
+How do I handle low stock? | Open Inventory or Dashboard alerts, review the item, then record incoming stock or adjust stock with a clear reason.
+
+## Table 37
+
+Topic | Plain-language explanation
+Appointment statuses | Scheduled means booked. Confirmed means attendance is confirmed. Checked-In means the patient arrived. In Progress means consultation started. Completed means finished. Cancelled and No-Show are final outcomes.
+Who can book | Patients can book for themselves. Receptionists can book on behalf of patients. AI booking may be available on the website or patient portal.
+Slot rule | Appointments must use a future available slot. A selected slot may expire after a few minutes if not confirmed.
+Cancel rule | Cancellation needs a reason. Some final statuses cannot be changed.
+Reschedule rule | Rescheduling needs a new future available slot. The system keeps the appointment history.
+
+## Table 38
+
+Topic | Plain-language explanation
+Billing users | Admins and receptionists can manage billing if allowed. Patients can view their own billing records.
+Payment | Payment amount must be more than zero and cannot be more than what is still owed.
+Billing statuses | Draft/Pending means not fully paid. Partially Paid means some amount is paid. Paid means complete. Cancelled or Overdue shows special handling.
+PDF download | Billing records may be downloadable as PDF statements.
+
+## Table 39
+
+Topic | Plain-language explanation
+Items and categories | Inventory is organized by categories and items. Items include stock quantity, reorder level, unit, cost, expiry date, and department.
+Transactions | Stock can be received, used, adjusted, or transferred. A reason is required for traceability.
+Low stock | When quantity reaches the reorder level, the system can show alerts and notify authorized users.
+Expiry warnings | Items near expiry can appear in alerts if configured.
+
+## Table 40
+
+Topic | Plain-language explanation
+Reports | Authorized users can generate reports for appointments, clinical work, financial data, inventory, patients, and staff workload.
+Filters | Reports may be filtered by date range, department, staff member, service, or status.
+Export | Reports and lists may be exported as CSV, Excel, or PDF where allowed.
+Advanced Search | Authorized users can search across main lists such as patients, appointments, lab orders, inventory, staff, and audit logs.
+
+## Table 41
+
+Topic | Plain-language explanation
+CMS pages | Admins with permission can edit public website pages such as Home, About, Departments, Doctors, Services, and Contact.
+Sections | Pages can contain sections like hero, text, FAQ, testimonials, statistics, and banners.
+Banners | Banners can be active or inactive and may have start and end dates.
+Live preview | CMS preview can update instantly when real-time connection is enabled.
+
+## Table 42
+
+Situation | Answer pattern
+User asks about a screen outside their role | Your role or permissions may not include that module.
+User asks a question not found in this document | I could not find this in the MedSphere dashboard knowledge base.
+User asks for medical diagnosis | I cannot provide medical advice or diagnosis. Please contact a qualified medical professional.
+User asks why a button is missing | That action may be hidden because your role or permissions do not include it, or because the current record status does not allow that action.
+User asks why saving failed | Please check the required fields and any validation messages on the form. If the issue continues, the record may conflict with an existing record or your permissions may not allow this action.
+
+## Table 43
+
+Role | Suggested opening message
+Patient | Hi, I can help you use your Patient Portal: appointments, lab results, prescriptions, billing, messages, profile, and sessions.
+Receptionist | Hi, I can help with front-desk tasks: today’s schedule, booking, check-in, no-show, patient registration, billing support, and messages.
+Doctor | Hi, I can help with your Doctor Portal: today’s consultations, patient context, records, prescriptions, lab reviews, AI summaries, and messages.
+Nurse | Hi, I can help with your Nurse Portal: department queue, patient preparation, care handoff, messages, profile, and sessions.
+Lab Technician | Hi, I can help with your Lab Portal: lab queues, order status, result entry, flags, completed results, and messages.
+Pharmacist | Hi, I can help with the Pharmacy Portal: queue, prescription details, dispensing, out-of-stock handling, fulfillment, and messages.
+Admin / Super Admin | Hi, I can help with facility management: dashboard, users, departments, services, staff, patients, inventory, billing, reports, CMS, settings, feedback, contact inbox, profile, and sessions.

@@ -8,7 +8,7 @@ const openApiDefinition = {
         title: 'MedSphere AI Service API',
         version: '1.0.0',
         description:
-            'OpenAPI documentation for the MedSphere AI microservice, covering consultation transcription and summarization, lab interpretation, and reservation-agent workflows.',
+            'OpenAPI documentation for the MedSphere AI microservice, covering consultation transcription and summarization, lab interpretation, reservation-agent workflows, and the dashboard-helper Socket.IO chat contract.',
     },
     servers: [
         {
@@ -37,7 +37,66 @@ const openApiDefinition = {
             name: 'Reservation Agent',
             description: 'Conversation endpoint for appointment booking assistance.',
         },
+        {
+            name: 'Dashboard Helper Socket',
+            description:
+                'Socket.IO chat widget contract for authenticated role-aware dashboard help. Answers are limited to the MedSphere role portal knowledge base. Connect to the AI service origin with auth.token set to the bearer access token.',
+        },
     ],
+    'x-socket-events': {
+        dashboardHelper: {
+            transport: 'Socket.IO',
+            namespace: '/',
+            url: 'http://localhost:3010',
+            authentication: {
+                type: 'bearer',
+                location: 'handshake.auth.token',
+                fallbackHeader: 'Authorization: Bearer <token>',
+            },
+            clientEvents: {
+                'dashboard-helper:message': {
+                    description:
+                        'Frontend sends a dashboard-helper question. The frontend must include the current role returned from auth/frontend state on every message.',
+                    payload: {
+                        $ref: '#/components/schemas/DashboardHelperMessageRequest',
+                    },
+                    acknowledgement: {
+                        $ref: '#/components/schemas/DashboardHelperAcknowledgement',
+                    },
+                },
+            },
+            serverEvents: {
+                'dashboard-helper:ready': {
+                    description:
+                        'Emitted after the socket authenticates and joins the user room.',
+                    payload: {
+                        $ref: '#/components/schemas/DashboardHelperReadyEvent',
+                    },
+                },
+                'dashboard-helper:typing': {
+                    description:
+                        'Emitted with isTyping=true while the AI service is generating and false when generation completes.',
+                    payload: {
+                        $ref: '#/components/schemas/DashboardHelperTypingEvent',
+                    },
+                },
+                'dashboard-helper:message': {
+                    description:
+                        'Assistant answer for current-role dashboard workflow questions. Unknown KB topics return a support/contact fallback instead of inventing.',
+                    payload: {
+                        $ref: '#/components/schemas/DashboardHelperAssistantMessageEvent',
+                    },
+                },
+                'dashboard-helper:error': {
+                    description:
+                        'Emitted when validation, authentication, role mismatch, or provider handling fails.',
+                    payload: {
+                        $ref: '#/components/schemas/DashboardHelperErrorEvent',
+                    },
+                },
+            },
+        },
+    },
     paths: {
         '/health': {
             get: {
@@ -697,7 +756,7 @@ const openApiDefinition = {
             },
             AiFeature: {
                 type: 'object',
-                required: ['id', 'name', 'endpoints'],
+                required: ['id', 'name'],
                 properties: {
                     id: {
                         type: 'string',
@@ -718,9 +777,41 @@ const openApiDefinition = {
                             'POST /api/ai/summarize',
                         ],
                     },
+                    sockets: {
+                        $ref: '#/components/schemas/SocketFeature',
+                    },
                     responseShape: {
                         type: 'object',
                         additionalProperties: true,
+                    },
+                },
+            },
+            SocketFeature: {
+                type: 'object',
+                required: ['namespace', 'clientEvents', 'serverEvents'],
+                properties: {
+                    namespace: {
+                        type: 'string',
+                        example: '/',
+                    },
+                    clientEvents: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                        example: ['dashboard-helper:message'],
+                    },
+                    serverEvents: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                        example: [
+                            'dashboard-helper:ready',
+                            'dashboard-helper:typing',
+                            'dashboard-helper:message',
+                            'dashboard-helper:error',
+                        ],
                     },
                 },
             },
@@ -1312,6 +1403,135 @@ const openApiDefinition = {
                     },
                     session: {
                         $ref: '#/components/schemas/ReservationSession',
+                    },
+                },
+            },
+            DashboardHelperMessageRequest: {
+                type: 'object',
+                required: ['message', 'role'],
+                properties: {
+                    sessionId: {
+                        type: 'string',
+                        description:
+                            'Existing dashboard-helper session id. Omit to start a new session.',
+                        example: 'session-123',
+                    },
+                    message: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 4000,
+                        example: 'What should I do first today?',
+                    },
+                    role: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 80,
+                        description:
+                            'Current logged-in role from the frontend/auth state. Required on every message.',
+                        example: 'Doctor',
+                    },
+                    portalTitle: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 120,
+                        example: 'Doctor Portal',
+                    },
+                    patientId: {
+                        type: 'string',
+                        minLength: 1,
+                        example: 'patient-123',
+                    },
+                },
+            },
+            DashboardHelperAcknowledgement: {
+                type: 'object',
+                required: ['ok'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true,
+                    },
+                    sessionId: {
+                        type: 'string',
+                        example: 'session-123',
+                    },
+                    error: {
+                        type: 'string',
+                        example:
+                            'Dashboard helper role must match authenticated user role',
+                    },
+                },
+            },
+            DashboardHelperReadyEvent: {
+                type: 'object',
+                required: ['userId', 'roles'],
+                properties: {
+                    userId: {
+                        type: 'string',
+                        example: 'user-123',
+                    },
+                    roles: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                        example: ['Doctor'],
+                    },
+                },
+            },
+            DashboardHelperTypingEvent: {
+                type: 'object',
+                required: ['sessionId', 'isTyping'],
+                properties: {
+                    sessionId: {
+                        type: 'string',
+                        example: 'session-123',
+                    },
+                    isTyping: {
+                        type: 'boolean',
+                        example: true,
+                    },
+                },
+            },
+            DashboardHelperAssistantMessageEvent: {
+                type: 'object',
+                required: ['sessionId', 'role', 'content', 'timestamp'],
+                properties: {
+                    sessionId: {
+                        type: 'string',
+                        example: 'session-123',
+                    },
+                    role: {
+                        type: 'string',
+                        enum: ['assistant'],
+                        example: 'assistant',
+                    },
+                    content: {
+                        type: 'string',
+                        example:
+                            'Open Doctor Dashboard and start with checked-in or ready consultations.',
+                    },
+                    model: {
+                        type: 'string',
+                        example: 'stub-dashboard-helper',
+                    },
+                    timestamp: {
+                        type: 'string',
+                        format: 'date-time',
+                    },
+                },
+            },
+            DashboardHelperErrorEvent: {
+                type: 'object',
+                required: ['message'],
+                properties: {
+                    sessionId: {
+                        type: 'string',
+                        example: 'session-123',
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Invalid dashboard helper message',
                     },
                 },
             },

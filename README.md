@@ -21,6 +21,7 @@ Owned MongoDB collections:
 - `ai_conversations`
 - `ai_lab_interpretations`
 - `ai_reservation_sessions`
+- `ai_dashboard_helper_sessions`
 
 ## Environment Keys
 
@@ -30,13 +31,17 @@ Service keys:
 
 - `PORT`
 - `NODE_ENV`
+- `CORS_ORIGIN`
 - `MONGODB_URI`
 - `AI_PROVIDER_MODE`
 - `OPENAI_API_KEY`
 - `OPENAI_TEXT_MODEL`
 - `OPENAI_TRANSCRIPTION_MODEL`
+- `AUTH_SERVICE_URL`
 - `CORE_SERVICE_URL`
 - `INTERNAL_API_KEY`
+- `JWT_ACCESS_SECRET`
+- `DASHBOARD_HELPER_KB_PATH` defaults to `docs/medsphere-role-portal-user-friendly-knowledge-base.txt`
 - `MAX_AUDIO_FILE_SIZE_MB`
 - `UPLOADS_DIR`
 - `PUBLIC_BASE_URL`
@@ -46,6 +51,7 @@ Docker Compose helper keys:
 - `MONGODB_PORT`
 - `REDIS_PORT`
 - `CORE_SERVICE_URL_DOCKER`
+- `AUTH_SERVICE_URL_DOCKER`
 
 Use `AI_PROVIDER_MODE=stub` for local development without OpenAI credentials. Use `AI_PROVIDER_MODE=openai` only when `OPENAI_API_KEY` is configured.
 
@@ -95,7 +101,7 @@ npm run seed:lab
 - Swagger UI: `http://localhost:3010/api/docs`
 - OpenAPI JSON: `http://localhost:3010/api/docs.json`
 
-Swagger covers health, capabilities, consultation transcription/summarization, consultation report approval/editing, lab interpretation, patient lab interpretation reads, internal lab interpretation queueing, and reservation-agent messaging.
+Swagger covers health, capabilities, consultation transcription/summarization, consultation report approval/editing, lab interpretation, patient lab interpretation reads, internal lab interpretation queueing, reservation-agent messaging, and the dashboard-helper Socket.IO contract through the `Dashboard Helper Socket` tag plus the `x-socket-events.dashboardHelper` OpenAPI extension.
 
 ## Main Endpoints
 
@@ -109,3 +115,31 @@ Swagger covers health, capabilities, consultation transcription/summarization, c
 - `POST /api/ai/internal/lab-results/:labOrderId/interpret`
 - `GET /api/ai/lab-results/:labOrderId/interpretation`
 - `POST /api/ai/agent/message`
+- Socket.IO `dashboard-helper:message` with server events `dashboard-helper:ready`, `dashboard-helper:typing`, `dashboard-helper:message`, and `dashboard-helper:error`
+
+## Dashboard Helper Socket
+
+The role-aware dashboard helper runs over Socket.IO on the AI service origin, for example `http://localhost:3010`. It uses the role-portal user-friendly knowledge base and answers only from the current role scope plus shared rules in that document.
+
+Frontend handshake:
+
+```ts
+io(aiSocketUrl, { auth: { token: accessToken } });
+```
+
+Client event:
+
+- `dashboard-helper:message` with `{ sessionId?, message, role, portalTitle?, patientId? }`
+
+Server events:
+
+- `dashboard-helper:ready`
+- `dashboard-helper:typing` with `{ sessionId, isTyping }`
+- `dashboard-helper:message` with the assistant reply
+- `dashboard-helper:error`
+
+The socket requires an authenticated user. Set `JWT_ACCESS_SECRET` to verify tokens locally, or set `AUTH_SERVICE_URL` so the service can verify the bearer token through `GET /api/auth/me`. The frontend must send the current role on every `dashboard-helper:message` event.
+
+If the answer is not covered by the role-portal knowledge base, the helper responds with the configured fallback directing the user to `info@medsphere.com` or Contact Us on the website. If the question asks about another role or hidden screen, the helper responds that the role or permissions may not include that module.
+
+For local development, `CORS_ORIGIN` accepts a comma-separated list, for example `http://localhost:3001,http://localhost:3002,http://localhost:5173`.

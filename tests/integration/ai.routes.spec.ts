@@ -24,6 +24,7 @@ describe('AI service routes', () => {
             'MS-34',
             'MS-55',
             'MS-35',
+            'MS-56',
         ]);
     });
 
@@ -40,6 +41,40 @@ describe('AI service routes', () => {
         expect(specResponse.body.components.securitySchemes).toHaveProperty(
             'bearerAuth',
         );
+        expect(
+            specResponse.body.tags.map((tag: { name: string }) => tag.name),
+        ).toContain('Dashboard Helper Socket');
+        expect(specResponse.body['x-socket-events']).toMatchObject({
+            dashboardHelper: {
+                namespace: '/',
+                clientEvents: {
+                    'dashboard-helper:message': {
+                        payload: {
+                            $ref: '#/components/schemas/DashboardHelperMessageRequest',
+                        },
+                    },
+                },
+                serverEvents: {
+                    'dashboard-helper:typing': {
+                        payload: {
+                            $ref: '#/components/schemas/DashboardHelperTypingEvent',
+                        },
+                    },
+                    'dashboard-helper:message': {
+                        payload: {
+                            $ref: '#/components/schemas/DashboardHelperAssistantMessageEvent',
+                        },
+                    },
+                },
+            },
+        });
+        expect(specResponse.body.components.schemas).toHaveProperty(
+            'DashboardHelperMessageRequest',
+        );
+        expect(specResponse.body.components.schemas.AiFeature.required).toEqual([
+            'id',
+            'name',
+        ]);
     });
 
     it('validates summarize requests before invoking persistence', async () => {

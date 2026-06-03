@@ -89,3 +89,17 @@ export interface ReservationAgentResult {
     model: string;
     tokenUsage?: TokenUsage;
 }
+
+export type DashboardHelperMessageRole = 'user' | 'assistant';
+
+export interface DashboardHelperMessage {
+    role: DashboardHelperMessageRole;
+    content: string;
+    timestamp?: Date;
+}
+
+export interface DashboardHelperResult {
+    reply: string;
+    model: string;
+    tokenUsage?: TokenUsage;
+}

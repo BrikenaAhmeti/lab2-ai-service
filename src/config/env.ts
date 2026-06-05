@@ -32,6 +32,9 @@ const envSchema = z.object({
         .min(1)
         .default(path.join(process.cwd(), 'uploads')),
     PUBLIC_BASE_URL: z.union([z.string().url(), z.literal('')]).default(''),
+    VAPI_API_BASE_URL: z.string().url().default('https://api.vapi.ai'),
+    VAPI_PRIVATE_KEY: z.string().optional().default(''),
+    VAPI_ASSISTANT_ID: z.string().optional().default(''),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -63,4 +66,7 @@ export const env = {
     maxAudioFileSizeMb: values.MAX_AUDIO_FILE_SIZE_MB,
     uploadsDir: values.UPLOADS_DIR,
     publicBaseUrl: values.PUBLIC_BASE_URL,
+    vapiApiBaseUrl: values.VAPI_API_BASE_URL,
+    vapiPrivateKey: values.VAPI_PRIVATE_KEY,
+    vapiAssistantId: values.VAPI_ASSISTANT_ID,
 };

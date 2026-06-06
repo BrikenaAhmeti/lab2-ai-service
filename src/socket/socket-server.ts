@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 import { z } from 'zod';
-import { env } from '../config/env';
+import { corsOrigin } from '../config/cors';
 import { createAiProvider } from '../infrastructure/ai/ai-provider';
 import { DashboardHelperChatService } from '../modules/ai/services/dashboard-helper-chat.service';
 import {
@@ -28,7 +28,7 @@ type DashboardHelperAck = (response: {
 export function createSocketServer(httpServer: HttpServer) {
     const io = new Server(httpServer, {
         cors: {
-            origin: parseCorsOrigin(env.corsOrigin),
+            origin: corsOrigin,
             credentials: true,
         },
     });
@@ -219,19 +219,4 @@ function normalizeRole(role: string) {
     };
 
     return aliases[normalized] ?? normalized;
-}
-
-function parseCorsOrigin(origin: string) {
-    if (origin === '*') {
-        return true;
-    }
-
-    if (origin.includes(',')) {
-        return origin
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-
-    return origin;
 }

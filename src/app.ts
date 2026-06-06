@@ -8,6 +8,8 @@ import { aiRoutes } from './modules/ai/presentation/ai.routes';
 import { getMongoHealth } from './infrastructure/mongodb/mongoose';
 import { registerSwaggerDocs } from './docs/swagger';
 import { env } from './config/env';
+import { corsOptions } from './config/cors';
+import { createRateLimiter } from './shared/middleware/rate-limit';
 
 export function createApp() {
     const app = express();
@@ -25,12 +27,12 @@ export function createApp() {
             },
         }),
     );
-    app.use(
-        cors({
-            origin: parseCorsOrigin(env.corsOrigin),
-            credentials: true,
-        }),
-    );
+    app.use(cors(corsOptions));
+    app.use(createRateLimiter({
+        windowMs: 15 * 60_000,
+        maxRequests: 400,
+        skip: (req) => req.method === 'OPTIONS' || req.path === '/health',
+    }));
     app.use(morgan('dev'));
     app.use(express.json());
     app.use('/uploads', express.static(env.uploadsDir));
@@ -51,19 +53,4 @@ export function createApp() {
     app.use(errorHandler);
 
     return app;
-}
-
-function parseCorsOrigin(origin: string) {
-    if (origin === '*') {
-        return true;
-    }
-
-    if (origin.includes(',')) {
-        return origin
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-
-    return origin;
 }

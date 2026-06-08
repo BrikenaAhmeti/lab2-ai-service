@@ -43,6 +43,45 @@ const DEMO_LAB_INTERPRETATIONS: DemoLabInterpretationFixture[] = [
         ],
     },
     {
+        labOrderId: '50000000-0000-4000-8000-000000000003',
+        patientId: DEMO_PATIENT_IDS.olivia,
+        patientContext: {
+            age: 36,
+            gender: 'female',
+            knownConditions: ['Seasonal asthma'],
+        },
+        results: [
+            {
+                name: 'Complete Blood Count',
+                value: 12.8,
+                unit: 'g/dL',
+                referenceRange: 'Hemoglobin 12.0 - 16.0 g/dL',
+                flag: 'normal' as const,
+            },
+            {
+                name: 'Basic Metabolic Panel',
+                value: 156,
+                unit: 'mg/dL',
+                referenceRange: 'Glucose 70 - 110 mg/dL',
+                flag: 'high' as const,
+            },
+            {
+                name: 'Hemoglobin A1c',
+                value: 8.2,
+                unit: '%',
+                referenceRange: 'Below 5.7%',
+                flag: 'high' as const,
+            },
+            {
+                name: 'C-Reactive Protein',
+                value: 22,
+                unit: 'mg/L',
+                referenceRange: 'Below 10 mg/L',
+                flag: 'high' as const,
+            },
+        ],
+    },
+    {
         labOrderId: 'a5000000-0000-4000-8000-000000000001',
         patientId: DEMO_PATIENT_IDS.samir,
         patientContext: {

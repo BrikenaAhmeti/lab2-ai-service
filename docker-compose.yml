@@ -21,6 +21,9 @@ services:
       MAX_AUDIO_FILE_SIZE_MB: ${MAX_AUDIO_FILE_SIZE_MB:-25}
       UPLOADS_DIR: ${UPLOADS_DIR:-uploads}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      VAPI_API_BASE_URL: ${VAPI_API_BASE_URL:-https://api.vapi.ai}
+      VAPI_PRIVATE_KEY: ${VAPI_PRIVATE_KEY:-}
+      VAPI_ASSISTANT_ID: ${VAPI_ASSISTANT_ID:-}
     ports:
       - "${PORT:-3010}:3010"
     volumes:

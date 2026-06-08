@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'node:path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -8,6 +9,8 @@ import { aiRoutes } from './modules/ai/presentation/ai.routes';
 import { getMongoHealth } from './infrastructure/mongodb/mongoose';
 import { registerSwaggerDocs } from './docs/swagger';
 import { env } from './config/env';
+import { corsOptions } from './config/cors';
+import { createRateLimiter } from './shared/middleware/rate-limit';
 
 export function createApp() {
     const app = express();
@@ -25,15 +28,29 @@ export function createApp() {
             },
         }),
     );
-    app.use(
-        cors({
-            origin: parseCorsOrigin(env.corsOrigin),
-            credentials: true,
-        }),
-    );
+    app.use(cors(corsOptions));
+    app.use(createRateLimiter({
+        windowMs: 15 * 60_000,
+        maxRequests: 400,
+        skip: (req) => req.method === 'OPTIONS' || req.path === '/health',
+    }));
     app.use(morgan('dev'));
     app.use(express.json());
-    app.use('/uploads', express.static(env.uploadsDir));
+    app.use(
+        '/uploads',
+        express.static(env.uploadsDir, {
+            setHeaders(res, filePath) {
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
+                if (
+                    path.extname(filePath).toLowerCase() === '.webm' &&
+                    filePath.includes('consultation-audio')
+                ) {
+                    res.setHeader('Content-Type', 'audio/webm');
+                }
+            },
+        }),
+    );
 
     app.get('/health', (_req, res) => {
         res.json({
@@ -51,19 +68,4 @@ export function createApp() {
     app.use(errorHandler);
 
     return app;
-}
-
-function parseCorsOrigin(origin: string) {
-    if (origin === '*') {
-        return true;
-    }
-
-    if (origin.includes(',')) {
-        return origin
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-
-    return origin;
 }

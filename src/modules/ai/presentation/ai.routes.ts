@@ -1,4 +1,5 @@
-import { Request, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
+import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { z } from 'zod';
 import { createAiProvider } from '../../../infrastructure/ai/ai-provider';
@@ -10,11 +11,15 @@ import { ConsultationAiService } from '../services/consultation-ai.service';
 import { storeConsultationAudio } from '../services/audio-storage.service';
 import { LabInterpretationAiService } from '../services/lab-interpretation-ai.service';
 import { ReservationAgentService } from '../services/reservation-agent.service';
+import { VapiCallLogService } from '../services/vapi-call-log.service';
+import { VapiToolsController } from './vapi-tools.controller';
 
 const aiProvider = createAiProvider();
 const consultationService = new ConsultationAiService(aiProvider);
 const labInterpretationService = new LabInterpretationAiService(aiProvider);
 const reservationAgentService = new ReservationAgentService(aiProvider);
+const vapiToolsController = new VapiToolsController();
+const vapiCallLogService = new VapiCallLogService();
 
 const audioUpload = multer({
     storage: multer.memoryStorage(),
@@ -36,6 +41,10 @@ const optionalMetadataSchema = z.object({
     patientId: z.string().min(1).optional(),
     staffId: z.string().min(1).optional(),
     audioFileUrl: z.string().url().optional(),
+    summarize: z
+        .enum(['true', 'false'])
+        .transform((value) => value === 'true')
+        .optional(),
 });
 
 const summarizeSchema = z.object({
@@ -57,6 +66,7 @@ const updateConsultationSummarySchema = z
                 assessmentAndDiagnosis: z.string(),
                 treatmentPlan: z.string(),
                 followUpInstructions: z.string(),
+                aiReview: z.string().optional(),
             })
             .optional(),
         summaryStatus: z.enum(['draft', 'approved', 'discarded']).optional(),
@@ -90,6 +100,11 @@ const reservationMessageSchema = z.object({
     message: z.string().min(1),
     userId: z.string().min(1).optional(),
     patientId: z.string().min(1).optional(),
+});
+
+const vapiCallsQuerySchema = z.object({
+    assistantId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
 });
 
 export const aiRoutes = Router();
@@ -150,6 +165,21 @@ aiRoutes.get('/capabilities', (_req, res) => {
                         'dashboard-helper:error',
                     ],
                 },
+            },
+            {
+                id: 'MS-VAPI-APPOINTMENTS',
+                name: 'Vapi voice appointment tools',
+                endpoints: [
+                    'POST /api/ai/vapi/tools',
+                    'GET /api/ai/vapi/calls',
+                    'GET /api/ai/vapi/calls/:id',
+                    'GET /api/ai/vapi/calls/:id/log',
+                ],
+                tools: [
+                    'resolveAppointmentContext',
+                    'checkAvailability',
+                    'bookAppointment',
+                ],
             },
         ],
     });
@@ -295,6 +325,48 @@ aiRoutes.post(
     }),
 );
 
+aiRoutes.post(
+    '/vapi/tools',
+    asyncHandler(async (req, res) => {
+        await vapiToolsController.handle(req, res);
+    }),
+);
+
+aiRoutes.get(
+    '/vapi/calls',
+    requireAdminAccess,
+    asyncHandler(async (req, res) => {
+        const query = vapiCallsQuerySchema.parse(req.query);
+        const result = await vapiCallLogService.listCalls(query);
+
+        res.json(result);
+    }),
+);
+
+aiRoutes.get(
+    '/vapi/calls/:id',
+    requireAdminAccess,
+    asyncHandler(async (req, res) => {
+        const result = await vapiCallLogService.getCall(
+            requiredParam(req.params.id, 'id'),
+        );
+
+        res.json(result);
+    }),
+);
+
+aiRoutes.get(
+    '/vapi/calls/:id/log',
+    requireAdminAccess,
+    asyncHandler(async (req, res) => {
+        const result = await vapiCallLogService.getArtifactLog(
+            requiredParam(req.params.id, 'id'),
+        );
+
+        res.json(result);
+    }),
+);
+
 function requiredParam(value: string | string[] | undefined, name: string) {
     if (typeof value !== 'string' || value.length === 0) {
         throw new AppError(`${name} route parameter is required`, 400);
@@ -311,4 +383,40 @@ function absoluteUrl(req: Request, path: string) {
     const host = req.get('host') ?? `localhost:${env.port}`;
 
     return `${req.protocol}://${host}${path}`;
+}
+
+function requireAdminAccess(req: Request, _res: Response, next: NextFunction) {
+    if (!env.jwtAccessSecret) {
+        throw new AppError('JWT access secret is not configured', 503);
+    }
+
+    const token = bearerToken(req);
+
+    if (!token) {
+        throw new AppError('Authentication is required', 401);
+    }
+
+    const decoded = jwt.verify(token, env.jwtAccessSecret) as jwt.JwtPayload & {
+        roles?: string[];
+        permissions?: string[];
+    };
+    const roles = decoded.roles ?? [];
+    const permissions = decoded.permissions ?? [];
+    const canRead =
+        roles.includes('Admin') ||
+        roles.includes('Super Admin') ||
+        permissions.includes('audit_logs:read');
+
+    if (!canRead) {
+        throw new AppError('Admin access is required', 403);
+    }
+
+    next();
+}
+
+function bearerToken(req: Request) {
+    const header = req.get('authorization');
+    const match = /^Bearer\s+(.+)$/i.exec(header ?? '');
+
+    return match?.[1];
 }

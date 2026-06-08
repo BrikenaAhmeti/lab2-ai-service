@@ -3,6 +3,7 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 import { AppError } from '../../shared/core/errors/app-error';
 import { env } from '../../config/env';
 import {
+    ConsultationConversationTurn,
     ConsultationSummary,
     DashboardHelperMessage,
     DashboardHelperResult,
@@ -25,7 +26,12 @@ import {
 
 export interface SummarizeConsultationInput {
     transcription: string;
+    conversationTurns?: ConsultationConversationTurn[];
     context?: Record<string, unknown>;
+}
+
+export interface StructureConsultationConversationInput {
+    transcription: string;
 }
 
 export interface InterpretLabResultsInput {
@@ -52,6 +58,9 @@ export interface DashboardHelperInput {
 
 export interface AiProvider {
     transcribeAudio(file: UploadedAudio): Promise<TranscriptionResult>;
+    structureConsultationConversation(
+        input: StructureConsultationConversationInput,
+    ): Promise<ConsultationConversationTurn[]>;
     summarizeConsultation(input: SummarizeConsultationInput): Promise<SummaryResult>;
     interpretLabResults(
         input: InterpretLabResultsInput,
@@ -72,6 +81,17 @@ export class StubAiProvider implements AiProvider {
         };
     }
 
+    async structureConsultationConversation(
+        input: StructureConsultationConversationInput,
+    ): Promise<ConsultationConversationTurn[]> {
+        return normalizeConversationTurns([
+            {
+                speaker: 'unknown',
+                text: input.transcription,
+            },
+        ]);
+    }
+
     async summarizeConsultation(
         input: SummarizeConsultationInput,
     ): Promise<SummaryResult> {
@@ -83,6 +103,7 @@ export class StubAiProvider implements AiProvider {
                 assessmentAndDiagnosis: 'Pending doctor review',
                 treatmentPlan: 'Pending doctor review',
                 followUpInstructions: 'Pending doctor review',
+                aiReview: 'Pending doctor review',
             },
             model: 'stub-summary',
         };
@@ -182,6 +203,43 @@ export class OpenAiProvider implements AiProvider {
         };
     }
 
+    async structureConsultationConversation(
+        input: StructureConsultationConversationInput,
+    ): Promise<ConsultationConversationTurn[]> {
+        const completion = await this.client.chat.completions.create({
+            model: env.openAiTextModel,
+            response_format: { type: 'json_object' },
+            messages: [
+                {
+                    role: 'system',
+                    content:
+                        [
+                            'Return only JSON with key conversation.',
+                            'conversation must be an array of chronological turns with fields speaker and text.',
+                            'speaker must be exactly one of doctor, patient, or unknown.',
+                            'Split the transcript into doctor/patient turns using clinical dialogue cues.',
+                            'Do not add, remove, summarize, or invent clinical facts.',
+                            'Keep the original meaning and wording as much as possible, but remove repeated filler if needed for readability.',
+                            'Merge adjacent sentences only when they belong to the same speaker.',
+                            'Use unknown only when the speaker cannot reasonably be inferred.',
+                        ].join(' '),
+                },
+                {
+                    role: 'user',
+                    content: JSON.stringify(input),
+                },
+            ],
+        });
+
+        const content = completion.choices[0]?.message?.content;
+        const result = parseJson<{ conversation?: unknown; turns?: unknown }>(
+            content,
+            'OpenAI conversation response was not valid JSON',
+        );
+
+        return normalizeConversationTurns(result.conversation ?? result.turns);
+    }
+
     async summarizeConsultation(
         input: SummarizeConsultationInput,
     ): Promise<SummaryResult> {
@@ -192,7 +250,16 @@ export class OpenAiProvider implements AiProvider {
                 {
                     role: 'system',
                     content:
-                        'Return only JSON for a medical consultation summary with keys chiefComplaint, historyOfPresentIllness, examinationFindings, assessmentAndDiagnosis, treatmentPlan, followUpInstructions. Do not invent facts that are not in the transcript.',
+                        [
+                            'Return only JSON for a clinician-reviewed medical consultation draft with keys chiefComplaint, historyOfPresentIllness, examinationFindings, assessmentAndDiagnosis, treatmentPlan, followUpInstructions, aiReview.',
+                            'The chiefComplaint value is displayed as Patient concern; write the patient main concern in patient-focused wording.',
+                            'Do not prefix any JSON value with its section heading.',
+                            'Use the transcript and conversationTurns as the source of truth for what happened in this visit.',
+                            'Use clinical context only as background: allergies, medical notes, recent diagnoses, prior treatment plans, and recent medications may inform caution or continuity, but do not turn background context into a new complaint, diagnosis, treatment, or instruction unless supported by the transcript.',
+                            'The aiReview section is a concise clinician-facing review of key risks, context-based cautions, and items the doctor should verify before finalizing.',
+                            'Do not include patient name, email, phone, address, personal number, or emergency contact details.',
+                            'Do not invent facts. If a section is not supported by the transcript, write "Pending doctor review".',
+                        ].join(' '),
                 },
                 {
                     role: 'user',
@@ -387,6 +454,33 @@ function tokenUsageFrom(usage: unknown): TokenUsage | undefined {
         completionTokens: tokenUsage.completion_tokens,
         totalTokens: tokenUsage.total_tokens,
     };
+}
+
+function normalizeConversationTurns(value: unknown): ConsultationConversationTurn[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item): ConsultationConversationTurn | null => {
+            if (!item || typeof item !== 'object') {
+                return null;
+            }
+
+            const turn = item as { speaker?: unknown; text?: unknown };
+            const speaker =
+                turn.speaker === 'doctor' || turn.speaker === 'patient'
+                    ? turn.speaker
+                    : 'unknown';
+            const text = typeof turn.text === 'string' ? turn.text.trim() : '';
+
+            if (!text) {
+                return null;
+            }
+
+            return { speaker, text };
+        })
+        .filter((turn): turn is ConsultationConversationTurn => Boolean(turn));
 }
 
 function buildDashboardHelperSystemPrompt(input: DashboardHelperInput) {

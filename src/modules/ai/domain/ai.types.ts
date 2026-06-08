@@ -19,11 +19,20 @@ export interface ConsultationSummary {
     assessmentAndDiagnosis: string;
     treatmentPlan: string;
     followUpInstructions: string;
+    aiReview?: string;
+}
+
+export type ConsultationSpeaker = 'doctor' | 'patient' | 'unknown';
+
+export interface ConsultationConversationTurn {
+    speaker: ConsultationSpeaker;
+    text: string;
 }
 
 export interface TranscriptionResult {
     text: string;
     model: string;
+    conversationTurns?: ConsultationConversationTurn[];
     tokenUsage?: TokenUsage;
 }
 

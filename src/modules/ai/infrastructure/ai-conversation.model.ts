@@ -8,6 +8,19 @@ const consultationSummarySchema = new Schema(
         assessmentAndDiagnosis: { type: String, default: '' },
         treatmentPlan: { type: String, default: '' },
         followUpInstructions: { type: String, default: '' },
+        aiReview: { type: String, default: '' },
+    },
+    { _id: false },
+);
+
+const conversationTurnSchema = new Schema(
+    {
+        speaker: {
+            type: String,
+            enum: ['doctor', 'patient', 'unknown'],
+            required: true,
+        },
+        text: { type: String, required: true },
     },
     { _id: false },
 );
@@ -31,6 +44,7 @@ const aiConversationSchema = new Schema(
         audioMimeType: String,
         audioSizeBytes: Number,
         transcription: String,
+        conversationTurns: [conversationTurnSchema],
         summary: consultationSummarySchema,
         reportText: String,
         summaryStatus: {

@@ -3,7 +3,16 @@ import {
     AiProvider,
     SummarizeConsultationInput,
 } from '../../../infrastructure/ai/ai-provider';
-import { ConsultationSummary, UploadedAudio } from '../domain/ai.types';
+import {
+    AppointmentClinicalContext,
+    AppointmentClinicalContextClient,
+    CoreAppointmentClinicalContextClient,
+} from '../infrastructure/core-appointment-clinical-context.client';
+import {
+    ConsultationConversationTurn,
+    ConsultationSummary,
+    UploadedAudio,
+} from '../domain/ai.types';
 import { AiConversationModel } from '../infrastructure/ai-conversation.model';
 
 interface TranscribeConsultationInput {
@@ -15,6 +24,7 @@ interface TranscribeConsultationInput {
     audioOriginalName?: string;
     audioMimeType?: string;
     audioSizeBytes?: number;
+    summarize?: boolean;
 }
 
 interface SummarizeAndStoreInput extends SummarizeConsultationInput {
@@ -31,39 +41,99 @@ interface UpdateConsultationSummaryInput {
 }
 
 export class ConsultationAiService {
-    constructor(private readonly provider: AiProvider) {}
+    constructor(
+        private readonly provider: AiProvider,
+        private readonly clinicalContextClient: AppointmentClinicalContextClient =
+            new CoreAppointmentClinicalContextClient(),
+    ) {}
 
     async transcribe(input: TranscribeConsultationInput) {
-        const result = await this.provider.transcribeAudio(input.file);
+        const transcription = await this.provider.transcribeAudio(input.file);
+        const conversationTurns = await this.structureConversationSafely(
+            transcription.text,
+        );
+        const transcriptionResult = {
+            ...transcription,
+            conversationTurns,
+        };
 
         if (!input.appointmentId) {
-            return result;
+            return transcriptionResult;
         }
 
-        await AiConversationModel.findOneAndUpdate(
+        const baseSetValues = {
+            appointmentId: input.appointmentId,
+            patientId: input.patientId,
+            staffId: input.staffId,
+            audioFileUrl: input.audioFileUrl,
+            audioOriginalName: input.audioOriginalName,
+            audioMimeType: input.audioMimeType,
+            audioSizeBytes: input.audioSizeBytes,
+            transcription: transcription.text,
+            conversationTurns,
+            'models.transcription': transcription.model,
+            tokenUsage: transcription.tokenUsage,
+        };
+
+        if (!input.summarize || !transcription.text.trim()) {
+            await AiConversationModel.findOneAndUpdate(
+                { appointmentId: input.appointmentId },
+                { $set: baseSetValues },
+                { upsert: true, new: true, setDefaultsOnInsert: true },
+            );
+
+            return transcriptionResult;
+        }
+
+        const clinicalContext = await this.clinicalContextClient.getByAppointmentId(
+            input.appointmentId,
+        );
+        const summaryResult = await this.provider.summarizeConsultation({
+            transcription: transcription.text,
+            conversationTurns,
+            context: buildSummaryContext(clinicalContext),
+        });
+        const reportText = formatConsultationReport(summaryResult.summary);
+        const conversation = await AiConversationModel.findOneAndUpdate(
             { appointmentId: input.appointmentId },
             {
                 $set: {
-                    appointmentId: input.appointmentId,
+                    ...baseSetValues,
                     patientId: input.patientId,
-                    staffId: input.staffId,
-                    audioFileUrl: input.audioFileUrl,
-                    audioOriginalName: input.audioOriginalName,
-                    audioMimeType: input.audioMimeType,
-                    audioSizeBytes: input.audioSizeBytes,
-                    transcription: result.text,
-                    'models.transcription': result.model,
-                    tokenUsage: result.tokenUsage,
+                    summary: summaryResult.summary,
+                    reportText,
+                    summaryStatus: 'draft',
+                    'models.summary': summaryResult.model,
+                    tokenUsage: summaryResult.tokenUsage ?? transcription.tokenUsage,
                 },
             },
             { upsert: true, new: true, setDefaultsOnInsert: true },
-        );
+        ).lean();
 
-        return result;
+        return {
+            ...transcriptionResult,
+            summary: summaryResult.summary,
+            reportText,
+            conversation,
+        };
     }
 
     async summarize(input: SummarizeAndStoreInput) {
-        const result = await this.provider.summarizeConsultation(input);
+        const clinicalContext = await this.clinicalContextClient.getByAppointmentId(
+            input.appointmentId,
+        );
+        const existingConversation = await AiConversationModel.findOne({
+            appointmentId: input.appointmentId,
+        }).lean();
+        const conversationTurns =
+            normalizeConversationTurns(existingConversation?.conversationTurns).length > 0
+                ? normalizeConversationTurns(existingConversation?.conversationTurns)
+                : await this.structureConversationSafely(input.transcription);
+        const result = await this.provider.summarizeConsultation({
+            transcription: input.transcription,
+            conversationTurns,
+            context: buildSummaryContext(clinicalContext),
+        });
         const reportText = formatConsultationReport(result.summary);
 
         const conversation = await AiConversationModel.findOneAndUpdate(
@@ -74,6 +144,7 @@ export class ConsultationAiService {
                     patientId: input.patientId,
                     staffId: input.staffId,
                     transcription: input.transcription,
+                    conversationTurns,
                     summary: result.summary,
                     reportText,
                     summaryStatus: 'draft',
@@ -89,6 +160,31 @@ export class ConsultationAiService {
             reportText,
             conversation,
         };
+    }
+
+    private async structureConversationSafely(
+        transcription: string,
+    ): Promise<ConsultationConversationTurn[]> {
+        const trimmed = transcription.trim();
+
+        if (!trimmed) {
+            return [];
+        }
+
+        try {
+            const turns = await this.provider.structureConsultationConversation({
+                transcription: trimmed,
+            });
+            const normalizedTurns = normalizeConversationTurns(turns);
+
+            if (normalizedTurns.length > 0) {
+                return normalizedTurns;
+            }
+        } catch {
+            return fallbackConversationTurns(trimmed);
+        }
+
+        return fallbackConversationTurns(trimmed);
     }
 
     async updateSummary(input: UpdateConsultationSummaryInput) {
@@ -160,17 +256,63 @@ export class ConsultationAiService {
     }
 }
 
+function buildSummaryContext(clinicalContext: AppointmentClinicalContext | null) {
+    if (!clinicalContext) {
+        return undefined;
+    }
+
+    return {
+        privacy: 'This context intentionally excludes patient name, email, phone, address, personal number, and emergency contacts.',
+        appointment: clinicalContext.appointment,
+        patientClinicalProfile: clinicalContext.patient,
+        recentMedicalRecords: clinicalContext.recentMedicalRecords,
+        recentPrescriptions: clinicalContext.recentPrescriptions,
+    };
+}
+
 function formatConsultationReport(summary: ConsultationSummary) {
     const sections: Array<[string, string]> = [
-        ['Chief complaint', summary.chiefComplaint],
+        ['Patient concern', summary.chiefComplaint],
         ['History of present illness', summary.historyOfPresentIllness],
         ['Examination findings', summary.examinationFindings],
         ['Assessment and diagnosis', summary.assessmentAndDiagnosis],
         ['Treatment plan', summary.treatmentPlan],
         ['Follow-up instructions', summary.followUpInstructions],
+        ['AI review', summary.aiReview ?? 'Pending doctor review'],
     ];
 
     return sections
         .map(([heading, value]) => `${heading}\n${value?.trim() || '-'}`)
         .join('\n\n');
+}
+
+function normalizeConversationTurns(value: unknown): ConsultationConversationTurn[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item): ConsultationConversationTurn | null => {
+            if (!item || typeof item !== 'object') {
+                return null;
+            }
+
+            const turn = item as { speaker?: unknown; text?: unknown };
+            const speaker =
+                turn.speaker === 'doctor' || turn.speaker === 'patient'
+                    ? turn.speaker
+                    : 'unknown';
+            const text = typeof turn.text === 'string' ? turn.text.trim() : '';
+
+            if (!text) {
+                return null;
+            }
+
+            return { speaker, text };
+        })
+        .filter((turn): turn is ConsultationConversationTurn => Boolean(turn));
+}
+
+function fallbackConversationTurns(transcription: string): ConsultationConversationTurn[] {
+    return [{ speaker: 'unknown', text: transcription }];
 }

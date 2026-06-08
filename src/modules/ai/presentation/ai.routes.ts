@@ -41,6 +41,10 @@ const optionalMetadataSchema = z.object({
     patientId: z.string().min(1).optional(),
     staffId: z.string().min(1).optional(),
     audioFileUrl: z.string().url().optional(),
+    summarize: z
+        .enum(['true', 'false'])
+        .transform((value) => value === 'true')
+        .optional(),
 });
 
 const summarizeSchema = z.object({
@@ -62,6 +66,7 @@ const updateConsultationSummarySchema = z
                 assessmentAndDiagnosis: z.string(),
                 treatmentPlan: z.string(),
                 followUpInstructions: z.string(),
+                aiReview: z.string().optional(),
             })
             .optional(),
         summaryStatus: z.enum(['draft', 'approved', 'discarded']).optional(),

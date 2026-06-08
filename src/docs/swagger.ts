@@ -854,8 +854,29 @@ const openApiDefinition = {
                         example:
                             'http://localhost:3010/uploads/consultation-audio/apt-123.webm',
                     },
+                    conversationTurns: {
+                        type: 'array',
+                        items: {
+                            $ref: '#/components/schemas/ConsultationConversationTurn',
+                        },
+                    },
                     tokenUsage: {
                         $ref: '#/components/schemas/TokenUsage',
+                    },
+                },
+            },
+            ConsultationConversationTurn: {
+                type: 'object',
+                required: ['speaker', 'text'],
+                properties: {
+                    speaker: {
+                        type: 'string',
+                        enum: ['doctor', 'patient', 'unknown'],
+                        example: 'patient',
+                    },
+                    text: {
+                        type: 'string',
+                        example: 'I have had a sore throat for three days.',
                     },
                 },
             },
@@ -930,6 +951,11 @@ const openApiDefinition = {
                         type: 'string',
                         example: 'Pending doctor review',
                     },
+                    aiReview: {
+                        type: 'string',
+                        example:
+                            'Verify fever duration, hydration status, medication allergies, and red flags before finalizing.',
+                    },
                 },
             },
             UpdateConsultationSummaryRequest: {
@@ -939,7 +965,7 @@ const openApiDefinition = {
                         type: 'string',
                         minLength: 1,
                         example:
-                            'Chief complaint\nChest discomfort\n\nTreatment plan\nContinue monitoring',
+                            'Patient concern\nChest discomfort\n\nTreatment plan\nContinue monitoring\n\nAI review\nVerify red flags before finalizing.',
                     },
                     summary: {
                         $ref: '#/components/schemas/ConsultationSummary',
@@ -995,13 +1021,19 @@ const openApiDefinition = {
                         example:
                             'Patient reports persistent cough and fever for three days.',
                     },
+                    conversationTurns: {
+                        type: 'array',
+                        items: {
+                            $ref: '#/components/schemas/ConsultationConversationTurn',
+                        },
+                    },
                     summary: {
                         $ref: '#/components/schemas/ConsultationSummary',
                     },
                     reportText: {
                         type: 'string',
                         example:
-                            'Chief complaint\nPersistent cough and fever\n\nTreatment plan\nPending doctor review',
+                            'Patient concern\nPersistent cough and fever\n\nTreatment plan\nPending doctor review\n\nAI review\nVerify red flags before finalizing.',
                     },
                     summaryStatus: {
                         type: 'string',

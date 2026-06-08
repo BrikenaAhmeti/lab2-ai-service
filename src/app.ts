@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'node:path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -35,7 +36,21 @@ export function createApp() {
     }));
     app.use(morgan('dev'));
     app.use(express.json());
-    app.use('/uploads', express.static(env.uploadsDir));
+    app.use(
+        '/uploads',
+        express.static(env.uploadsDir, {
+            setHeaders(res, filePath) {
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
+                if (
+                    path.extname(filePath).toLowerCase() === '.webm' &&
+                    filePath.includes('consultation-audio')
+                ) {
+                    res.setHeader('Content-Type', 'audio/webm');
+                }
+            },
+        }),
+    );
 
     app.get('/health', (_req, res) => {
         res.json({
